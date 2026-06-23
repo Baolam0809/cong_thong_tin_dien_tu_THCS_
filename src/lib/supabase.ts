@@ -109,7 +109,7 @@ export async function fetchTableData<T>(tableName: string, fallbackData: T[]): P
     }
 
     // Return mapped fields (e.g. JSON parsed)
-    return data.map(item => {
+    const result = data.map(item => {
       const copy = { ...item };
       // Map properties back if they are JSON in Postgres
       for (const k of Object.keys(copy)) {
@@ -125,8 +125,20 @@ export async function fetchTableData<T>(tableName: string, fallbackData: T[]): P
           }
         }
       }
-      return copy as T;
+      return copy as any;
     });
+
+    if (tableName === 'thcs_assignments') {
+      result.forEach((item: any) => {
+        if (!item.subjectClassPairs || item.subjectClassPairs.length === 0) {
+          const subs = Array.isArray(item.subjects) ? item.subjects : [];
+          const cls = Array.isArray(item.classes) ? item.classes : [];
+          item.subjectClassPairs = subs.flatMap((s: string) => cls.map((c: string) => `${s} ${c}`));
+        }
+      });
+    }
+
+    return result as T[];
   } catch (err) {
     console.warn(`[Supabase Fetch] Fetch failed for ${tableName}, falling back to static mock data:`, err);
     return fallbackData;
@@ -144,7 +156,7 @@ export function sanitizeRowForTable(tableName: string, row: any): any {
   const schemas: Record<string, string[]> = {
     thcs_accounts: ['id', 'name', 'username', 'password', 'role', 'extra', 'isFirstLogin', 'canPostNews'],
     thcs_classes: ['id', 'khoi', 'lop', 'gvcn', 'total'],
-    thcs_assignments: ['id', 'teacherId', 'teacherName', 'subjects', 'classes', 'subjectClassPairs'],
+    thcs_assignments: ['id', 'teacherId', 'teacherName', 'subjects', 'classes'],
     thcs_course_registrations: ['id', 'studentName', 'classInfo', 'courses', 'file', 'status', 'date'],
     thcs_surveys: ['id', 'parentName', 'studentName', 'classInfo', 'topic', 'rating', 'content', 'file', 'status', 'date'],
     thcs_exams: ['id', 'subject', 'type', 'duration', 'teacher', 'correctAnswers', 'mcqMaxScore', 'essayMaxScore', 'essayQuestion', 'targetType', 'targetValue', 'examFile'],
