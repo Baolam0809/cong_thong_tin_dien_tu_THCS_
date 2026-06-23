@@ -6,6 +6,7 @@ import OverviewSection from './components/OverviewSection';
 import CourseRegistrationSection from './components/CourseRegistrationSection';
 import DocumentSection from './components/DocumentSection'; // Correct path to components
 import AdminSections from './components/AdminSections';
+import UpcomingSchedulesSection from './components/UpcomingSchedulesSection';
 import StudentTestSection from './components/StudentTestSection';
 import GradingSection from './components/GradingSection';
 import ExportCenterSection from './components/ExportCenterSection';
@@ -48,7 +49,8 @@ import {
   BannerSlide,
   StudentConduct,
   HomeroomNotice,
-  YoutubeLesson
+  YoutubeLesson,
+  UpcomingSchedule
 } from './types';
 
 import {
@@ -98,6 +100,7 @@ export default function App() {
   const prevConductsRef = useRef<StudentConduct[]>([]);
   const prevNoticesRef = useRef<HomeroomNotice[]>([]);
   const prevLessonsRef = useRef<YoutubeLesson[]>([]);
+  const prevSchedulesRef = useRef<UpcomingSchedule[]>([]);
 
   // ==========================================
   // MASTER STATES (WITH LOCALSTORAGE SYNC)
@@ -208,6 +211,15 @@ export default function App() {
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
     const saved = localStorage.getItem('thcs_notifications');
     return saved ? JSON.parse(saved) : initialNotifications;
+  });
+
+  const [schedules, setSchedules] = useState<UpcomingSchedule[]>(() => {
+    const saved = localStorage.getItem('thcs_schedules');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, title: 'Lịch thi giữa kỳ II', description: 'Thời hạn: Trọng tâm Khối 6,7,8,9', date: '22/06', colorType: 'orange' },
+      { id: 2, title: 'Kỳ thi cuối kỳ II', description: 'Thi học vụ, học bạ số hóa', date: '30/06', colorType: 'rose' },
+      { id: 3, title: 'Đồng bộ liên lạc điện tử', description: 'Họp phụ huynh trao đổi học vụ', date: '10/07', colorType: 'purple' },
+    ];
   });
 
   const [activities, setActivities] = useState<Activity[]>(() => {
@@ -352,7 +364,8 @@ export default function App() {
           dbOutstandingClasses,
           dbConducts,
           dbNotices,
-          dbLessons
+          dbLessons,
+          dbSchedules
         ] = await Promise.all([
           fetchTableData<Account>('thcs_accounts', initialAccounts),
           fetchTableData<Class>('thcs_classes', initialClasses),
@@ -364,6 +377,11 @@ export default function App() {
           fetchTableData<Submission>('thcs_submissions', initialSubmissions),
           fetchTableData<DocumentItem>('thcs_documents', initialDocuments),
           fetchTableData<NotificationItem>('thcs_notifications', initialNotifications),
+          fetchTableData<UpcomingSchedule>('thcs_schedules', [
+            { id: 1, title: 'Lịch thi giữa kỳ II', description: 'Thời hạn: Trọng tâm Khối 6,7,8,9', date: '22/06', colorType: 'orange' },
+            { id: 2, title: 'Kỳ thi cuối kỳ II', description: 'Thi học vụ, học bạ số hóa', date: '30/06', colorType: 'rose' },
+            { id: 3, title: 'Đồng bộ liên lạc điện tử', description: 'Họp phụ huynh trao đổi học vụ', date: '10/07', colorType: 'purple' },
+          ]),
           fetchTableData<Activity>('thcs_activities', initialActivities),
           fetchTableData<StudentDetail>('thcs_outstanding_students', initialOutstandingStudents),
           fetchTableData<ClassDetail>('thcs_outstanding_classes', initialOutstandingClasses),
@@ -432,6 +450,7 @@ export default function App() {
         setConducts(dbConducts);
         setNotices(dbNotices);
         setLessons(dbLessons);
+        setSchedules(dbSchedules);
 
         // Populate refs immediately for exact delta tracking
         prevAccountsRef.current = dbAccounts;
@@ -450,6 +469,7 @@ export default function App() {
         prevConductsRef.current = dbConducts;
         prevNoticesRef.current = dbNotices;
         prevLessonsRef.current = dbLessons;
+        prevSchedulesRef.current = dbSchedules;
 
         showToast("Đồng bộ Cơ sở dữ liệu Supabase đám mây thành công!", "success");
       } catch (err: any) {
@@ -664,6 +684,14 @@ export default function App() {
       prevLessonsRef.current = lessons;
     }
   }, [lessons, supabaseLoaded, dbStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('thcs_schedules', JSON.stringify(schedules));
+    if (supabaseLoaded && dbStatus?.connected && !dbStatus?.tablesMissing) {
+      syncTableToSupabase('thcs_schedules', schedules, prevSchedulesRef.current);
+      prevSchedulesRef.current = schedules;
+    }
+  }, [schedules, supabaseLoaded, dbStatus]);
 
   // Toast registration
   useEffect(() => {
@@ -1175,6 +1203,33 @@ export default function App() {
               documents={documents}
               setDocuments={setDocuments}
               onOpenUploadDoc={() => setIsUploadDocOpen(true)}
+              onSyncDocumentToNotification={(doc) => {
+                const isDuplicated = notifications.some(n => n.title.includes(doc.title));
+                if (isDuplicated) {
+                  if (!confirm("Thông báo đồng bộ trùng lặp tiêu đề đã tồn tại. Bạn vẫn muốn đồng bộ lại chứ?")) {
+                    return;
+                  }
+                }
+                const newNotification: NotificationItem = {
+                  id: Date.now(),
+                  date: doc.date.slice(0, 5),
+                  isNew: true,
+                  source: doc.category === 'Cấp Sở/Bộ' ? 'Sở GD&ĐT' : doc.category === 'Cấp UBND xã' ? 'Xã Hòa Xá' : 'Nhà trường',
+                  title: `[Chỉ đạo] ${doc.title}`,
+                  content: `Nhà trường phát hành văn bản chỉ đạo chính thức thuộc ${doc.category}: "${doc.title}". Đề nghị tập thể cán bộ giáo viên chủ nhiệm, bộ môn, quý phụ huynh và các em học sinh truy cập mục Văn bản chỉ đạo tải tệp đính kèm (${doc.file?.name || 'tệp đính kèm'}) để nghiên cứu và chấp hành nghiêm túc.`
+                };
+                setNotifications(prev => [newNotification, ...prev]);
+                showToast(`Đã đồng bộ văn bản chỉ đạo thành công sang Thông báo!`, "success");
+              }}
+            />
+          )}
+
+          {/* 3.1. UPCOMING SCHEDULES MANAGEMENT */}
+          {currentSection === 'upcoming-schedules' && (
+            <UpcomingSchedulesSection
+              currentUser={currentUser}
+              schedules={schedules}
+              setSchedules={setSchedules}
             />
           )}
 
@@ -1778,33 +1833,39 @@ export default function App() {
           {/* Calendar List */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-300">
             <div className="bg-gradient-to-r from-brand-blue to-brand-blue-dark text-white p-3 font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 border-b">
-              <Calendar className="w-4 h-4 text-orange-300 animate-spin" /> Lịch Thi & Sự Kiện học kỳ II
+              <Calendar className="w-4 h-4 text-orange-300 animate-pulse" /> Lịch sắp tới
             </div>
             
             <div className="p-2.5 flex flex-col gap-2.5 bg-slate-50/30 text-xs">
-              <div className="flex items-center justify-between p-2.5 bg-orange-50/50 hover:bg-orange-100/50 rounded-xl border border-orange-200/50 transition">
-                <div>
-                  <h6 className="font-black text-slate-800 text-[10.5px]">Lịch thi giữa kỳ II</h6>
-                  <p className="text-[9px] text-slate-450 font-bold block mt-0.5">Thời hạn: Trọng tâm Khối 6,7,8,9</p>
-                </div>
-                <span className="bg-orange-100 text-brand-orange border border-orange-200 px-2 py-0.5 rounded font-mono text-[9px] font-black">22/06</span>
-              </div>
+              {schedules.map(sched => {
+                let wrapperClass = "bg-orange-50/50 hover:bg-orange-100/50 border-orange-200/50";
+                let badgeClass = "bg-orange-100 text-brand-orange border border-orange-200";
 
-              <div className="flex items-center justify-between p-2.5 bg-rose-50/50 hover:bg-rose-100/50 rounded-xl border border-rose-200/50 transition">
-                <div>
-                  <h6 className="font-black text-slate-800 text-[10.5px]">Kỳ thi cuối kỳ II</h6>
-                  <p className="text-[9px] text-slate-450 font-bold block mt-0.5">Thi học vụ, học bạ số hóa</p>
-                </div>
-                <span className="bg-rose-100 text-rose-600 border border-rose-200 px-2 py-0.5 rounded font-mono text-[9px] font-black">30/06</span>
-              </div>
+                if (sched.colorType === 'rose') {
+                  wrapperClass = "bg-rose-50/50 hover:bg-rose-100/50 border-rose-200/50";
+                  badgeClass = "bg-rose-100 text-rose-600 border border-rose-200";
+                } else if (sched.colorType === 'purple') {
+                  wrapperClass = "bg-purple-50/50 hover:bg-purple-100/50 border-purple-200/50";
+                  badgeClass = "bg-purple-100 text-purple-700 border-purple-200";
+                } else if (sched.colorType === 'blue') {
+                  wrapperClass = "bg-blue-50/50 hover:bg-blue-100/50 border-blue-200/50";
+                  badgeClass = "bg-blue-100 text-brand-blue border border-blue-200";
+                }
 
-              <div className="flex items-center justify-between p-2.5 bg-purple-50/50 hover:bg-purple-100/50 rounded-xl border border-purple-200/50 transition">
-                <div>
-                  <h6 className="font-black text-slate-800 text-[10.5px]">Đồng bộ liên lạc điện tử</h6>
-                  <p className="text-[9px] text-slate-450 font-bold block mt-0.5">Phọp phụ huynh trao đổi học vụ</p>
-                </div>
-                <span className="bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded font-mono text-[9px] font-black">10/07</span>
-              </div>
+                return (
+                  <div key={sched.id} className={`flex items-center justify-between p-2.5 rounded-xl border transition ${wrapperClass}`}>
+                    <div>
+                      <h6 className="font-black text-slate-800 text-[10.5px]">{sched.title}</h6>
+                      {sched.description && (
+                        <p className="text-[9px] text-slate-450 font-bold block mt-0.5">{sched.description}</p>
+                      )}
+                    </div>
+                    <span className={`px-2 py-0.5 rounded font-mono text-[9px] font-black ${badgeClass}`}>
+                      {sched.date}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -2021,11 +2082,18 @@ export default function App() {
               <label className="block text-[10px] text-slate-500 uppercase mb-1">Chọn file đính kèm</label>
               <input id="acc-doc-file" type="file" className="w-full p-1.5 border rounded" required />
             </div>
+            <div className="flex items-center gap-2 pt-1 pb-1">
+              <input id="acc-doc-sync-notify" type="checkbox" className="w-4 h-4 text-brand-orange border-slate-300 rounded cursor-pointer" defaultChecked />
+              <label htmlFor="acc-doc-sync-notify" className="text-[11px] text-slate-700 cursor-pointer select-none">
+                Đồng bộ sang Thông báo & Tin giáo vụ
+              </label>
+            </div>
             <button
               onClick={() => {
                 const titleStr = (document.getElementById('acc-doc-title') as HTMLInputElement)?.value;
                 const catStr = (document.getElementById('acc-doc-cat') as HTMLSelectElement)?.value as any;
                 const fileInp = (document.getElementById('acc-doc-file') as HTMLInputElement)?.files?.[0];
+                const syncNotify = (document.getElementById('acc-doc-sync-notify') as HTMLInputElement)?.checked;
 
                 if (!titleStr || !titleStr.trim() || !fileInp) {
                   showToast("Vui lòng nhập tiêu đề văn bản và chọn tệp!", "info");
@@ -2058,6 +2126,19 @@ export default function App() {
                   };
 
                   setDocuments(prev => [newD, ...prev]);
+
+                  if (syncNotify) {
+                    const newNotification: NotificationItem = {
+                      id: Date.now() + 1,
+                      date: new Date().toLocaleDateString('vi-VN').slice(0, 5),
+                      isNew: true,
+                      source: catStr === 'Cấp Sở/Bộ' ? 'Sở GD&ĐT' : catStr === 'Cấp UBND xã' ? 'Xã Hòa Xá' : 'Nhà trường',
+                      title: `[Chỉ đạo mới] ${titleStr.trim()}`,
+                      content: `Văn bản quy định chỉ đạo mới thuộc ${catStr}: "${titleStr.trim()}". Các tổ bộ môn, giáo viên chủ nhiệm và toàn thể cán bộ nhân viên nhà trường khẩn trương tải tệp đính kèm "${fileInp.name}" (${displaySize}) tại chuyên mục Văn bản chỉ đạo để nghiên cứu và chấp hành nghiêm túc.`
+                    };
+                    setNotifications(prev => [newNotification, ...prev]);
+                  }
+
                   setIsUploadDocOpen(false);
                   showToast("Đăng tải thành công dữ liệu văn bản chỉ đạo mới!", "success");
                 };

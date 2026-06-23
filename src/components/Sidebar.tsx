@@ -97,6 +97,13 @@ export default function Sidebar({
       color: 'text-purple-600'
     },
     {
+      id: 'upcoming-schedules',
+      label: 'Quản lý Lịch sắp tới',
+      icon: CalendarDays,
+      roles: ['Admin', 'Giáo viên'],
+      color: 'text-amber-600 font-bold'
+    },
+    {
       id: 'student-test',
       label: 'Phòng thi (Làm bài)',
       icon: Award,

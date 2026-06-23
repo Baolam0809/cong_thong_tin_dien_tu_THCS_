@@ -168,7 +168,8 @@ export function sanitizeRowForTable(tableName: string, row: any): any {
     thcs_outstanding_students: ['id', 'name', 'class', 'badge', 'gpa', 'conduct', 'avatar', 'achievements', 'subjects', 'guestbook'],
     thcs_outstanding_classes: ['id', 'lop', 'gvcn', 'slogan', 'icon', 'iconColor', 'total', 'achievements', 'guestbook'],
     thcs_student_conducts: ['id', 'studentName', 'className', 'conduct', 'attendance', 'scoreBehavior', 'teacherNote', 'updateDate'],
-    thcs_homeroom_notices: ['id', 'className', 'title', 'content', 'date', 'pin']
+    thcs_homeroom_notices: ['id', 'className', 'title', 'content', 'date', 'pin'],
+    thcs_schedules: ['id', 'title', 'description', 'date', 'colorType']
   };
 
   const allowedFields = schemas[tableName];
@@ -468,4 +469,13 @@ CREATE TABLE IF NOT EXISTS thcs_homeroom_notices (
   content TEXT NOT NULL,
   date TEXT,
   pin BOOLEAN DEFAULT false
+);
+
+-- 16. Bảng Lịch sắp tới
+CREATE TABLE IF NOT EXISTS thcs_schedules (
+  id BIGINT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT,
+  date TEXT NOT NULL,
+  "colorType" TEXT DEFAULT 'orange'
 );`;

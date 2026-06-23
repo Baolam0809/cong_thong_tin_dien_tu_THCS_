@@ -9,6 +9,7 @@ interface DocumentSectionProps {
   documents: DocumentItem[];
   setDocuments: React.Dispatch<React.SetStateAction<DocumentItem[]>>;
   onOpenUploadDoc: () => void;
+  onSyncDocumentToNotification?: (doc: DocumentItem) => void;
 }
 
 export default function DocumentSection({
@@ -16,6 +17,7 @@ export default function DocumentSection({
   documents,
   setDocuments,
   onOpenUploadDoc,
+  onSyncDocumentToNotification,
 }: DocumentSectionProps) {
   const [activeFilter, setActiveTabFilter] = useState<'all' | 'Cấp Sở/Bộ' | 'Cấp UBND xã' | 'Cấp Trường'>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -117,13 +119,24 @@ export default function DocumentSection({
                     {doc.date}
                   </td>
                   <td className="p-3 text-right">
-                    <button
-                      onClick={() => handleDownload(doc)}
-                      className="text-brand-blue hover:text-brand-blue-dark hover:underline font-extrabold cursor-pointer flex items-center gap-1.5 ml-auto bg-blue-50/50 px-3 py-1.5 rounded-lg border border-blue-100 hover:border-brand-blue transition-all"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Tải về tệp ({doc.file ? doc.file.size : '1.2 MB'})</span>
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap md:flex-nowrap">
+                      {canUpload && onSyncDocumentToNotification && (
+                        <button
+                          onClick={() => onSyncDocumentToNotification(doc)}
+                          className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100/60 font-extrabold cursor-pointer flex items-center gap-1 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-150 transition-all text-[11px]"
+                          title="Đồng bộ ngay sang mục Thông báo & Tin giáo vụ"
+                        >
+                          Đồng bộ TB
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDownload(doc)}
+                        className="text-brand-blue hover:text-brand-blue-dark hover:underline font-extrabold cursor-pointer flex items-center gap-1.5 bg-blue-50/50 px-3 py-1.5 rounded-lg border border-blue-100 hover:border-brand-blue transition-all"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Tải về tệp ({doc.file ? doc.file.size : '1.2 MB'})</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

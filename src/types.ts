@@ -56,6 +56,14 @@ export interface Survey {
   date: string;
 }
 
+export interface UpcomingSchedule {
+  id: number;
+  title: string;
+  description: string;
+  date: string;
+  colorType: 'orange' | 'rose' | 'purple' | 'blue';
+}
+
 export interface Exam {
   id: number;
   subject: string;
