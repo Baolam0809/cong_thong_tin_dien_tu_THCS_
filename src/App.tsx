@@ -149,7 +149,6 @@ export default function App() {
   });
 
   const [currentSection, setCurrentSection] = useState<string>('overview');
-  const [isBgClickNavEnabled, setIsBgClickNavEnabled] = useState(true);
 
   // Lists
   const [accounts, setAccounts] = useState<Account[]>(() => {
@@ -600,72 +599,6 @@ export default function App() {
     });
   }, []);
 
-  // Root screen empty click navigation listener
-  const handleRootBackgroundClick = (e: React.MouseEvent) => {
-    if (!isBgClickNavEnabled) return;
-
-    // Check if target is interactive
-    const target = e.target as HTMLElement;
-    const isInteractive = target.closest('aside') || 
-                         target.closest('section') || 
-                         target.closest('header') || 
-                         target.closest('nav') || 
-                         target.closest('footer') || 
-                         target.closest('.fixed') || 
-                         target.closest('button') || 
-                         target.closest('input') || 
-                         target.closest('select') || 
-                         target.closest('textarea') || 
-                         target.closest('a') || 
-                         target.closest('tr') || 
-                         target.classList.contains('sidebar-btn') || 
-                         target.classList.contains('doc-tab');
-                         
-    if (!isInteractive) {
-      // Find list of tabs the current role can see
-      const role = currentUser ? currentUser.role : null;
-      const menuItems = [
-        { id: 'overview', roles: ['all'] },
-        { id: 'course-registration', roles: ['Admin', 'Học sinh', 'Phụ huynh'] },
-        { id: 'documents', roles: ['Admin', 'Giáo viên', 'Học sinh', 'Phụ huynh'] },
-        { id: 'accounts', roles: ['Admin'] },
-        { id: 'classes', roles: ['Admin'] },
-        { id: 'subjects', roles: ['Admin'] },
-        { id: 'teacher-workspace', roles: ['Giáo viên'] },
-        { id: 'exams', roles: ['Admin', 'Giáo viên'] },
-        { id: 'homework', roles: ['Admin', 'Giáo viên'] },
-        { id: 'student-test', roles: ['Học sinh'] },
-        { id: 'grading', roles: ['Admin', 'Giáo viên'] },
-        { id: 'reports', roles: ['Admin', 'Giáo viên', 'Học sinh', 'Phụ huynh'] },
-        { id: 'contact-book', roles: ['Admin', 'Giáo viên', 'Học sinh', 'Phụ huynh'] },
-        { id: 'export-center', roles: ['Admin', 'Giáo viên'] },
-        { id: 'game-center', roles: ['all'] },
-        { id: 'ui-news-management', roles: ['Admin', 'Giáo viên'] }
-      ];
-
-      const visibleIds = menuItems
-        .filter(item => {
-          if (item.id === 'ui-news-management') {
-            return role === 'Admin' || currentUser?.canPostNews === true;
-          }
-          return item.roles.includes('all') || (role && item.roles.includes(role));
-        })
-        .map(item => item.id);
-
-      const currentIndex = visibleIds.indexOf(currentSection);
-      let nextIndex = currentIndex + 1;
-      if (nextIndex >= visibleIds.length || nextIndex < 0) {
-        nextIndex = 0;
-      }
-
-      const nextSection = visibleIds[nextIndex];
-      if (nextSection) {
-        setCurrentSection(nextSection);
-        showToast(`Chuyển tiếp nhanh: ${nextSection === 'overview' ? 'Tổng quan' : nextSection}`, "info");
-      }
-    }
-  };
-
   // ==========================================
   // AUTH PROCEDURES (COMPLYING WITH ADMIN/ADMIN)
   // ==========================================
@@ -1073,7 +1006,6 @@ export default function App() {
 
   return (
     <div
-      onClick={handleRootBackgroundClick}
       className="min-h-screen flex flex-col text-slate-800 transition-colors duration-300 relative select-none"
     >
       {/* Dynamic React custom toasts */}
@@ -1813,29 +1745,6 @@ export default function App() {
           </div>
         </div>
       </footer>
-
-      {/* TOGGLE NAVIGATION SHORTCUT BUTTON CARD */}
-      <div className="no-print fixed bottom-5 left-5 z-45">
-        <button
-          onClick={() => {
-            setIsBgClickNavEnabled(!isBgClickNavEnabled);
-            showToast(`Tính năng click nền chuyển tab: ${!isBgClickNavEnabled ? 'BẬT' : 'TẮT'}`, "info");
-          }}
-          className="bg-white text-slate-700 px-3.5 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-200 text-xs font-black cursor-pointer hover:bg-slate-50 transition"
-        >
-          <span className="relative flex h-2 w-2">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-              isBgClickNavEnabled ? 'bg-emerald-450' : 'bg-red-400'
-            }`}></span>
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${
-              isBgClickNavEnabled ? 'bg-emerald-500' : 'bg-red-500'
-            }`}></span>
-          </span>
-          <span>Click nền chuyển Tab: <b className={isBgClickNavEnabled ? "text-emerald-600" : "text-red-550"}>
-            {isBgClickNavEnabled ? "BẬT" : "TẮT"}
-          </b></span>
-        </button>
-      </div>
 
       {/* ==========================================
           MODALS BINDINGS PORTAL
