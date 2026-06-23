@@ -596,7 +596,7 @@ export function CreateActivityModal({ isOpen, onClose, onSubmit }: CreateActivit
               Hủy bỏ
             </button>
             <button type="submit" className="bg-brand-blue hover:bg-brand-blue-dark text-white font-black px-5 py-2 rounded-xl shadow transition-all">
-              Đăng hoạt động
+              Đăng công khai Hoạt động (Public)
             </button>
           </div>
         </form>

@@ -550,16 +550,30 @@ export default function UINewsSection({
                 </div>
 
                 <div className="pt-4 border-t border-slate-250 flex items-center justify-between flex-wrap gap-3">
-                  <div className="text-xs text-amber-700 flex items-center gap-1">
-                    <HelpCircle className="w-4 h-4 shrink-0" />
-                    <span>Sau khi chỉnh sửa, các thay đổi sẽ tự động đồng bộ trên toàn trang học vụ.</span>
+                  <div className="text-xs text-indigo-700 flex items-center gap-1">
+                    <HelpCircle className="w-4 h-4 shrink-0 text-indigo-500 animate-pulse" />
+                    <span className="font-medium">Chỉnh sửa hoàn tất? Click Lưu & Công khai để cập nhật toàn trang và lưu đám mây.</span>
                   </div>
-                  <button
-                    onClick={handleResetBranding}
-                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" /> Khôi phục mặc định
-                  </button>
+                  <div className="flex gap-2 w-full sm:w-auto justify-end">
+                    <button
+                      onClick={handleResetBranding}
+                      className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" /> Khôi phục mặc định
+                    </button>
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('thcs_banner_url', bannerUrl || '');
+                        localStorage.setItem('thcs_logo_url', logoUrl || '');
+                        localStorage.setItem('thcs_marquee_text', marqueeText || '');
+                        localStorage.setItem('thcs_banner_slides', JSON.stringify(bannerSlides));
+                        showToast("Đã lưu thiết lập giao diện và công khai (public) thành công lên Cổng thông tin!", "success");
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" /> Lưu & Công khai (Public)
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1333,9 +1347,9 @@ export default function UINewsSection({
                 </button>
                 <button
                   type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
                 >
-                  <Check className="w-4 h-4" /> Lưu thông tin
+                  <Check className="w-4 h-4 animate-pulse" /> Đăng bài công khai (Public)
                 </button>
               </div>
             </form>

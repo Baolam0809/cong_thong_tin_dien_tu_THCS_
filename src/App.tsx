@@ -348,6 +348,125 @@ export default function App() {
         return;
       }
 
+      // Retrieve latest local storage values to serve as high-fidelity fallbacks to prevent any data loss
+      let localAccounts = initialAccounts;
+      let localClasses = initialClasses;
+      let localAssignments = initialAssignments;
+      let localCourseRegistrations = initialCourseRegistrations;
+      let localSurveys = initialSurveys;
+      let localExams = initialExams;
+      let localHomework = initialHomework;
+      let localSubmissions = initialSubmissions;
+      let localDocuments = initialDocuments;
+      let localNotifications = initialNotifications;
+      let localSchedules: UpcomingSchedule[] = [
+        { id: 1, title: 'Lịch thi giữa kỳ II', description: 'Thời hạn: Trọng tâm Khối 6,7,8,9', date: '22/06', colorType: 'orange' },
+        { id: 2, title: 'Kỳ thi cuối kỳ II', description: 'Thi học vụ, học bạ số hóa', date: '30/06', colorType: 'rose' },
+        { id: 3, title: 'Đồng bộ liên lạc điện tử', description: 'Họp phụ huynh trao đổi học vụ', date: '10/07', colorType: 'purple' },
+      ];
+      let localActivities = initialActivities;
+      let localOutstandingStudents = initialOutstandingStudents;
+      let localOutstandingClasses = initialOutstandingClasses;
+      let localConducts: any[] = [];
+      let localNotices = [
+        {
+          id: 1,
+          className: '9A',
+          title: 'Thông báo họp Phụ huynh cuối năm & hướng nghiệp 10',
+          content: 'Yêu cầu phụ huynh đi đầy đủ để nghe thông báo điểm học bạ số và nhận phiếu bàn giao chuyển lớp của các em học sinh.',
+          date: '22/06/2026',
+          pin: true
+        }
+      ];
+      let localLessons = [
+        {
+          id: 1,
+          title: 'Học tốt Toán 9 - Chuyên đề: Hệ Thức Lượng Trong Tam Giác Vuông (Cơ bản & Nâng cao)',
+          youtubeUrl: 'https://www.youtube.com/watch?v=9LhI-UIsHqI',
+          subject: 'Toán học',
+          grade: 'Lớp 9',
+          description: 'Bài giảng hướng dẫn chi tiết các công thức hệ thức lượng trong tam giác vuông, cách chứng minh ngắn gọn và hệ thống bài tập áp dụng thực tế giúp học sinh ôn thi học kỳ và chuẩn bị tốt cho kỳ thi Tuyển sinh vào lớp 10 học vụ THCS.',
+          createdAt: '21/06/2026'
+        },
+        {
+          id: 2,
+          title: 'Ngữ Văn lớp 9 | Ôn tập văn học trung đại: Truyện Kiều sâu sắc nghệ thuật',
+          youtubeUrl: 'https://www.youtube.com/watch?v=68D0Zasx_2w',
+          subject: 'Ngữ văn',
+          grade: 'Lớp 9',
+          description: 'Tổng hợp phân tích đầy đủ các giá trị nghệ thuật bối cảnh nhân đạo, nghệ thuật tả cảnh ngụ tình đặc trưng qua đoạn trích Kiều ở lầu Ngưng Bích và các tác phẩm trọng điểm học tập.',
+          createdAt: '22/06/2026'
+        },
+        {
+          id: 3,
+          title: 'English Grade 9 | Master All 12 Tenses in 30 Minutes! (IELTS Foundation)',
+          youtubeUrl: 'https://www.youtube.com/watch?v=mDscD_P9jic',
+          subject: 'Tiếng Anh',
+          grade: 'Lớp 9',
+          description: 'Hệ thống hóa toàn bộ 12 thì trong Tiếng Anh cùng các cấu trúc câu giao tiếp và ngữ pháp nâng cao thường xuất hiện trong đề thi tuyển sinh CLB và học tập bồi dưỡng ngoại ngữ tích hợp.',
+          createdAt: '23/06/2026'
+        }
+      ];
+      let localSettings = [
+        {
+          id: 1,
+          bannerUrl: '',
+          logoUrl: '',
+          marqueeText: '🚀 Chào mừng quý thầy cô, các bậc phụ huynh và các em học sinh đến với Cổng thông tin điện tử Trường THCS Hòa Phú! Chuyển đổi số học vụ nâng cao hiệu suất dạy và học!',
+          bannerSlides: [
+            {
+              id: "default-1",
+              type: "url",
+              source: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=800",
+              title: "Hoạt động học tập sôi nổi của học sinh",
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: "default-2",
+              type: "url",
+              source: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=800",
+              title: "Phong trào thể thao và ngoại khóa rèn luyện",
+              createdAt: new Date().toISOString()
+            }
+          ]
+        }
+      ];
+
+      try {
+        const sAccs = localStorage.getItem('thcs_accounts'); if (sAccs) localAccounts = JSON.parse(sAccs);
+        const sClas = localStorage.getItem('thcs_classes'); if (sClas) localClasses = JSON.parse(sClas);
+        const sAsgn = localStorage.getItem('thcs_assignments'); if (sAsgn) localAssignments = JSON.parse(sAsgn);
+        const sCors = localStorage.getItem('thcs_course_regs'); if (sCors) localCourseRegistrations = JSON.parse(sCors);
+        const sSurv = localStorage.getItem('thcs_surveys'); if (sSurv) localSurveys = JSON.parse(sSurv);
+        const sExam = localStorage.getItem('thcs_exams'); if (sExam) localExams = JSON.parse(sExam);
+        const sHome = localStorage.getItem('thcs_homework'); if (sHome) localHomework = JSON.parse(sHome);
+        const sSubm = localStorage.getItem('thcs_submissions'); if (sSubm) localSubmissions = JSON.parse(sSubm);
+        const sDocs = localStorage.getItem('thcs_documents'); if (sDocs) localDocuments = JSON.parse(sDocs);
+        const sNoti = localStorage.getItem('thcs_notifications'); if (sNoti) localNotifications = JSON.parse(sNoti);
+        const sSched = localStorage.getItem('thcs_schedules'); if (sSched) localSchedules = JSON.parse(sSched);
+        const sActs = localStorage.getItem('thcs_activities'); if (sActs) localActivities = JSON.parse(sActs);
+        const sStuds = localStorage.getItem('thcs_out_students'); if (sStuds) localOutstandingStudents = JSON.parse(sStuds);
+        const sOutc = localStorage.getItem('thcs_out_classes'); if (sOutc) localOutstandingClasses = JSON.parse(sOutc);
+        const sCond = localStorage.getItem('thcs_student_conducts'); if (sCond) localConducts = JSON.parse(sCond);
+        const sHomn = localStorage.getItem('thcs_homeroom_notices'); if (sHomn) localNotices = JSON.parse(sHomn);
+        const sYout = localStorage.getItem('thcs_youtube_lessons'); if (sYout) localLessons = JSON.parse(sYout);
+        
+        const bUrl = localStorage.getItem('thcs_banner_url') || '';
+        const lUrl = localStorage.getItem('thcs_logo_url') || '';
+        const mTxt = localStorage.getItem('thcs_marquee_text') || '🚀 Chào mừng quý thầy cô, các bậc phụ huynh và các em học sinh đến với Cổng thông tin điện tử Trường THCS Hòa Phú! Chuyển đổi số học vụ nâng cao hiệu suất dạy và học!';
+        const sSlidesStr = localStorage.getItem('thcs_banner_slides');
+        const sSlides = sSlidesStr ? JSON.parse(sSlidesStr) : localSettings[0].bannerSlides;
+        localSettings = [{
+          id: 1,
+          bannerUrl: bUrl,
+          logoUrl: lUrl,
+          marqueeText: mTxt,
+          bannerSlides: sSlides
+        }];
+      } catch (e) {
+        console.warn("Failed to parse some local storage values, fallback defaults will be used", e);
+      }
+
       try {
         const [
           dbAccounts,
@@ -369,88 +488,24 @@ export default function App() {
           dbSchedules,
           dbSettings
         ] = await Promise.all([
-          fetchTableData<Account>('thcs_accounts', initialAccounts),
-          fetchTableData<Class>('thcs_classes', initialClasses),
-          fetchTableData<Assignment>('thcs_assignments', initialAssignments),
-          fetchTableData<CourseRegistration>('thcs_course_registrations', initialCourseRegistrations),
-          fetchTableData<Survey>('thcs_surveys', initialSurveys),
-          fetchTableData<Exam>('thcs_exams', initialExams),
-          fetchTableData<Homework>('thcs_homework', initialHomework),
-          fetchTableData<Submission>('thcs_submissions', initialSubmissions),
-          fetchTableData<DocumentItem>('thcs_documents', initialDocuments),
-          fetchTableData<NotificationItem>('thcs_notifications', initialNotifications),
-          fetchTableData<UpcomingSchedule>('thcs_schedules', [
-            { id: 1, title: 'Lịch thi giữa kỳ II', description: 'Thời hạn: Trọng tâm Khối 6,7,8,9', date: '22/06', colorType: 'orange' },
-            { id: 2, title: 'Kỳ thi cuối kỳ II', description: 'Thi học vụ, học bạ số hóa', date: '30/06', colorType: 'rose' },
-            { id: 3, title: 'Đồng bộ liên lạc điện tử', description: 'Họp phụ huynh trao đổi học vụ', date: '10/07', colorType: 'purple' },
-          ]),
-          fetchTableData<Activity>('thcs_activities', initialActivities),
-          fetchTableData<StudentDetail>('thcs_outstanding_students', initialOutstandingStudents),
-          fetchTableData<ClassDetail>('thcs_outstanding_classes', initialOutstandingClasses),
-          fetchTableData<StudentConduct>('thcs_student_conducts', []),
-          fetchTableData<HomeroomNotice>('thcs_homeroom_notices', [
-            {
-              id: 1,
-              className: '9A',
-              title: 'Thông báo họp Phụ huynh cuối năm & hướng nghiệp 10',
-              content: 'Yêu cầu phụ huynh đi đầy đủ để nghe thông báo điểm học bạ số và nhận phiếu bàn giao chuyển lớp của các em học sinh.',
-              date: '22/06/2026',
-              pin: true
-            }
-          ]),
-          fetchTableData<YoutubeLesson>('thcs_youtube_lessons', [
-            {
-              id: 1,
-              title: 'Học tốt Toán 9 - Chuyên đề: Hệ Thức Lượng Trong Tam Giác Vuông (Cơ bản & Nâng cao)',
-              youtubeUrl: 'https://www.youtube.com/watch?v=9LhI-UIsHqI',
-              subject: 'Toán học',
-              grade: 'Lớp 9',
-              description: 'Bài giảng hướng dẫn chi tiết các công thức hệ thức lượng trong tam giác vuông, cách chứng minh ngắn gọn và hệ thống bài tập áp dụng thực tế giúp học sinh ôn thi học kỳ và chuẩn bị tốt cho kỳ thi Tuyển sinh vào lớp 10 học vụ THCS.',
-              createdAt: '21/06/2026'
-            },
-            {
-              id: 2,
-              title: 'Ngữ Văn lớp 9 | Ôn tập văn học trung đại: Truyện Kiều sâu sắc nghệ thuật',
-              youtubeUrl: 'https://www.youtube.com/watch?v=68D0Zasx_2w',
-              subject: 'Ngữ văn',
-              grade: 'Lớp 9',
-              description: 'Tổng hợp phân tích đầy đủ các giá trị nghệ thuật bối cảnh nhân đạo, nghệ thuật tả cảnh ngụ tình đặc trưng qua đoạn trích Kiều ở lầu Ngưng Bích và các tác phẩm trọng điểm học tập.',
-              createdAt: '22/06/2026'
-            },
-            {
-              id: 3,
-              title: 'English Grade 9 | Master All 12 Tenses in 30 Minutes! (IELTS Foundation)',
-              youtubeUrl: 'https://www.youtube.com/watch?v=mDscD_P9jic',
-              subject: 'Tiếng Anh',
-              grade: 'Lớp 9',
-              description: 'Hệ thống hóa toàn bộ 12 thì trong Tiếng Anh cùng các cấu trúc câu giao tiếp và ngữ pháp nâng cao thường xuất hiện trong đề thi tuyển sinh CLB và học tập bồi dưỡng ngoại ngữ tích hợp.',
-              createdAt: '23/06/2026'
-            }
-          ]),
-          fetchTableData<any>('thcs_settings', [
-            {
-              id: 1,
-              bannerUrl: '',
-              logoUrl: '',
-              marqueeText: '🚀 Chào mừng quý thầy cô, các bậc phụ huynh và các em học sinh đến với Cổng thông tin điện tử Trường THCS Hòa Phú! Chuyển đổi số học vụ nâng cao hiệu suất dạy và học!',
-              bannerSlides: [
-                {
-                  id: "default-1",
-                  type: "url",
-                  source: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=800",
-                  title: "Hoạt động học tập sôi nổi của học sinh",
-                  createdAt: new Date().toISOString()
-                },
-                {
-                  id: "default-2",
-                  type: "url",
-                  source: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=800",
-                  title: "Phong trào thể thao và ngoại khóa rèn luyện",
-                  createdAt: new Date().toISOString()
-                }
-              ]
-            }
-          ])
+          fetchTableData<Account>('thcs_accounts', localAccounts),
+          fetchTableData<Class>('thcs_classes', localClasses),
+          fetchTableData<Assignment>('thcs_assignments', localAssignments),
+          fetchTableData<CourseRegistration>('thcs_course_registrations', localCourseRegistrations),
+          fetchTableData<Survey>('thcs_surveys', localSurveys),
+          fetchTableData<Exam>('thcs_exams', localExams),
+          fetchTableData<Homework>('thcs_homework', localHomework),
+          fetchTableData<Submission>('thcs_submissions', localSubmissions),
+          fetchTableData<DocumentItem>('thcs_documents', localDocuments),
+          fetchTableData<NotificationItem>('thcs_notifications', localNotifications),
+          fetchTableData<Activity>('thcs_activities', localActivities),
+          fetchTableData<StudentDetail>('thcs_outstanding_students', localOutstandingStudents),
+          fetchTableData<ClassDetail>('thcs_outstanding_classes', localOutstandingClasses),
+          fetchTableData<StudentConduct>('thcs_student_conducts', localConducts),
+          fetchTableData<HomeroomNotice>('thcs_homeroom_notices', localNotices),
+          fetchTableData<YoutubeLesson>('thcs_youtube_lessons', localLessons),
+          fetchTableData<UpcomingSchedule>('thcs_schedules', localSchedules),
+          fetchTableData<any>('thcs_settings', localSettings)
         ]);
 
         // Sync local states
