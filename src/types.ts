@@ -202,3 +202,13 @@ export interface HomeroomNotice {
   date: string;
   pin: boolean;
 }
+
+export interface YoutubeLesson {
+  id: number;
+  title: string;
+  youtubeUrl: string;
+  subject: string;
+  grade: string;
+  description: string;
+  createdAt: string;
+}

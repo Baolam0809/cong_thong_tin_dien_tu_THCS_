@@ -17,7 +17,7 @@ import {
   FileImage,
   Sparkles
 } from 'lucide-react';
-import { Account, Activity, BannerSlide } from '../types';
+import { Account, Activity, BannerSlide, StudentDetail } from '../types';
 import { showToast } from './Toast';
 
 interface UINewsSectionProps {
@@ -34,6 +34,8 @@ interface UINewsSectionProps {
   setActivities: React.Dispatch<React.SetStateAction<Activity[]>>;
   bannerSlides: BannerSlide[];
   setBannerSlides: React.Dispatch<React.SetStateAction<BannerSlide[]>>;
+  outstandingStudents: StudentDetail[];
+  setOutstandingStudents: React.Dispatch<React.SetStateAction<StudentDetail[]>>;
 }
 
 export default function UINewsSection({
@@ -50,8 +52,10 @@ export default function UINewsSection({
   setActivities,
   bannerSlides,
   setBannerSlides,
+  outstandingStudents,
+  setOutstandingStudents,
 }: UINewsSectionProps) {
-  const [activeTab, setActiveTab] = useState<'branding' | 'publishers' | 'articles'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'publishers' | 'articles' | 'students'>('branding');
   
   // Articles CRUD Modal state
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
@@ -78,6 +82,120 @@ export default function UINewsSection({
 
   const isUserAdmin = currentUser?.role === 'Admin';
   const canUserPost = isUserAdmin || currentUser?.canPostNews === true;
+
+  // Outstanding Students states
+  const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  const [studName, setStudName] = useState('');
+  const [studClass, setStudClass] = useState('');
+  const [studGPA, setStudGPA] = useState('9.8');
+  const [studConduct, setStudConduct] = useState('Tốt');
+  const [studBadge, setStudBadge] = useState('Học sinh Xuất sắc');
+  const [studAvatar, setStudAvatar] = useState('https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=200');
+  const [studAchievements, setStudAchievements] = useState('');
+  const studFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleResetStudentForm = () => {
+    setSelectedStudentId(null);
+    setStudName('');
+    setStudClass('');
+    setStudGPA('9.8');
+    setStudConduct('Tốt');
+    setStudBadge('Học sinh Xuất sắc');
+    setStudAvatar('https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=200');
+    setStudAchievements('');
+    if (studFileInputRef.current) {
+      studFileInputRef.current.value = '';
+    }
+  };
+
+  const handleSelectStudentForEdit = (s: StudentDetail) => {
+    setSelectedStudentId(s.id);
+    setStudName(s.name);
+    setStudClass(s.class);
+    setStudGPA(s.gpa);
+    setStudConduct(s.conduct || 'Tốt');
+    setStudBadge(s.badge);
+    setStudAvatar(s.avatar);
+    setStudAchievements(s.achievements.join('\n'));
+  };
+
+  const handleSaveStudent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studName.trim() || !studClass.trim()) {
+      showToast("Vui lòng điền họ tên học sinh và lớp hành chính!", "error");
+      return;
+    }
+
+    const achievementsArray = studAchievements
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    if (selectedStudentId !== null) {
+      // Edit student
+      setOutstandingStudents(prev => prev.map(s => {
+        if (s.id === selectedStudentId) {
+          return {
+            ...s,
+            name: studName.trim(),
+            class: studClass.trim(),
+            gpa: studGPA,
+            conduct: studConduct,
+            badge: studBadge.trim(),
+            avatar: studAvatar,
+            achievements: achievementsArray,
+          };
+        }
+        return s;
+      }));
+      showToast(`Đã cập nhật hồ sơ học sinh ${studName} thành công!`, "success");
+    } else {
+      // Create student
+      const nextId = outstandingStudents.length > 0 ? Math.max(...outstandingStudents.map(s => s.id)) + 1 : 1;
+      const newStudent: StudentDetail = {
+        id: nextId,
+        name: studName.trim(),
+        class: studClass.trim(),
+        gpa: studGPA,
+        conduct: studConduct,
+        badge: studBadge.trim() || 'Học sinh Tiêu biểu',
+        avatar: studAvatar || 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=200',
+        achievements: achievementsArray,
+        subjects: { 'Toán': 9.8, 'Văn': 9.5, 'Anh': 10.0, 'Khoa học': 9.6 },
+        guestbook: []
+      };
+      setOutstandingStudents(prev => [...prev, newStudent]);
+      showToast(`Đã vinh danh gương sáng học sinh vàng ${studName}!`, "success");
+    }
+
+    // Reset Form
+    handleResetStudentForm();
+  };
+
+  const handleDeleteStudent = (id: number) => {
+    setOutstandingStudents(prev => prev.filter(s => s.id !== id));
+    showToast("Đã gỡ gương sáng học sinh vàng khỏi danh sách!", "success");
+    if (selectedStudentId === id) {
+      handleResetStudentForm();
+    }
+  };
+
+  const handleStudentAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      showToast("Kích thước hình chân dung quá lớn! Vui lòng chọn tệp dưới 3MB.", "error");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setStudAvatar(reader.result as string);
+      showToast("Đã đọc ảnh chân dung học sinh!", "success");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSlideFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -313,6 +431,16 @@ export default function UINewsSection({
           }`}
         >
           <Newspaper className="w-4.5 h-4.5" /> Quản Lý Tin Bài ({activities.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('students')}
+          className={`flex-1 sm:flex-initial py-3.5 px-6 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 border-b-2 transition cursor-pointer ${
+            activeTab === 'students'
+              ? 'border-brand-blue text-brand-blue bg-white shadow-sm rounded-t-xl font-black'
+              : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/55'
+          }`}
+        >
+          <ImageIcon className="w-4.5 h-4.5 text-brand-orange" /> Quản Lý Ảnh Học Sinh Vàng ({outstandingStudents.length})
         </button>
       </div>
 
@@ -861,6 +989,210 @@ export default function UINewsSection({
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 4: QUẢN LÝ ẢNH HỌC SINH VÀNG */}
+        {activeTab === 'students' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* Form panel on left */}
+              <div className="lg:col-span-5 bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4">
+                <span className="block text-[11px] font-black text-slate-405 uppercase tracking-wider mb-2">
+                  {selectedStudentId !== null ? '✏️ Cập Nhật Gương Học Sinh Vàng' : '✨ Thêm Mới Gương Học Sinh Vàng'}
+                </span>
+
+                <form onSubmit={handleSaveStudent} className="space-y-3.5">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-300 relative shrink-0 group bg-slate-205 shadow-sm">
+                      <img src={studAvatar} alt="Chân dung" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[9px] font-bold transition">
+                        Thay đổi
+                      </div>
+                      <input 
+                        type="file" 
+                        ref={studFileInputRef}
+                        accept="image/*"
+                        onChange={handleStudentAvatarUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Ảnh Chân Dung Học Sinh</label>
+                      <button 
+                        type="button" 
+                        onClick={() => studFileInputRef.current?.click()}
+                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold border border-indigo-150 px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition cursor-pointer"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" /> Chọn tệp ảnh từ máy
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Họ và tên học sinh *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ví dụ: Nguyễn Gia Huy"
+                      value={studName}
+                      onChange={(e) => setStudName(e.target.value)}
+                      className="w-full text-xs bg-white border border-slate-205 rounded-xl p-2.5 text-slate-800"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Lớp hành chính *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ví dụ: 9A"
+                        value={studClass}
+                        onChange={(e) => setStudClass(e.target.value)}
+                        className="w-full text-xs bg-white border border-slate-205 rounded-xl p-2.5 text-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Điểm trung bình GPA *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ví dụ: 9.8"
+                        value={studGPA}
+                        onChange={(e) => setStudGPA(e.target.value)}
+                        className="w-full text-xs bg-white border border-slate-205 rounded-xl p-2.5 text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Hạnh kiểm</label>
+                      <select
+                        value={studConduct}
+                        onChange={(e) => setStudConduct(e.target.value)}
+                        className="w-full text-xs bg-white border border-slate-205 rounded-xl p-2.5 text-slate-800 font-semibold"
+                      >
+                        <option value="Tốt">Tốt</option>
+                        <option value="Khá">Khá</option>
+                        <option value="Trung Bình">Trung bình</option>
+                        <option value="Yếu">Yếu</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Danh hiệu / Huân chương *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ví dụ: Thủ khoa học kỳ"
+                        value={studBadge}
+                        onChange={(e) => setStudBadge(e.target.value)}
+                        className="w-full text-xs bg-white border border-slate-205 rounded-xl p-2.5 text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Các thành tích đạt được (Mỗi dòng một thành tích) *</label>
+                    <textarea
+                      rows={3}
+                      required
+                      placeholder="Ví dụ:&#13;Giải Nhất Học sinh Giỏi môn Toán Cấp Thành Phố&#13;Huy chương Vàng Tiếng Anh kỳ thi Olympic học đường"
+                      value={studAchievements}
+                      onChange={(e) => setStudAchievements(e.target.value)}
+                      className="w-full text-xs bg-white border border-slate-205 rounded-xl p-2.5 text-slate-800"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 justify-end pt-2">
+                    {selectedStudentId !== null && (
+                      <button
+                        type="button"
+                        onClick={handleResetStudentForm}
+                        className="bg-slate-200 hover:bg-slate-350 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition cursor-pointer"
+                      >
+                        Hủy
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      className="bg-brand-orange hover:bg-orange-600 text-white font-bold px-5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                    >
+                      <Check className="w-4 h-4" /> {selectedStudentId !== null ? 'Cập nhật' : 'Lưu học sinh'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* List panel on right */}
+              <div className="lg:col-span-7 space-y-4">
+                <span className="block text-[11px] font-black text-slate-400 uppercase tracking-wider">
+                  📋 Danh Sách Gương Học Sinh Vàng Hiện Tại ({outstandingStudents.length})
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[460px] overflow-y-auto pr-1">
+                  {outstandingStudents.length > 0 ? (
+                    outstandingStudents.map(student => (
+                      <div
+                        key={student.id}
+                        onClick={() => handleSelectStudentForEdit(student)}
+                        className={`p-3.5 border rounded-2xl flex gap-3 cursor-pointer hover:border-brand-orange transition duration-205 group relative ${
+                          selectedStudentId === student.id ? 'border-brand-orange bg-orange-50/10' : 'border-slate-205 bg-white'
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-slate-200 bg-slate-100">
+                          <img src={student.avatar} alt={student.name} className="w-full h-full object-cover animate-fade-in" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-extrabold text-xs text-slate-800 truncate">{student.name}</h5>
+                          <p className="text-[10px] text-slate-550 font-bold">Lớp: {student.class} | GPA: <span className="text-brand-orange font-bold font-mono">{student.gpa}</span></p>
+                          <span className="inline-block mt-1 px-2 py-0.5 bg-amber-50 text-[9px] text-amber-800 border border-amber-100 rounded-md font-extrabold">
+                            🏆 {student.badge}
+                          </span>
+                        </div>
+
+                        {/* Hover Tools */}
+                        <div className="absolute top-2.5 right-2 rounded-lg bg-white/95 border border-slate-200 opacity-0 group-hover:opacity-100 flex items-center shadow-md transition">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectStudentForEdit(student);
+                            }}
+                            className="p-1.5 hover:text-indigo-650 transition text-slate-550 cursor-pointer"
+                            title="Sửa học sinh"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteStudent(student.id);
+                            }}
+                            className="p-1.5 hover:text-rose-650 transition text-slate-550 cursor-pointer"
+                            title="Xóa học sinh"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-2 text-center py-10 bg-slate-50 border border-dashed rounded-2xl border-slate-200">
+                      <div className="text-slate-400 font-bold italic text-xs">Chưa có gương sáng học sinh vinh danh nào.</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-amber-50/50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-xs font-semibold leading-relaxed">
+                  💡 <b>Hướng dẫn liên kết hình ảnh:</b> Chân dung ảnh của các học sinh vinh danh được tải trực tiếp lên đây làm hình đại diện lấp lánh tại danh mục <b>"GƯƠNG SÁNG VÀNG DANH DỰ"</b> ở trang Tổng quan cho toàn trường theo dõi học tập.
+                </div>
+              </div>
+
+            </div>
           </div>
         )}
 

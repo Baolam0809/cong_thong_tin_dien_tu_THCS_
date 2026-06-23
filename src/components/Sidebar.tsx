@@ -13,7 +13,8 @@ import {
   Notebook,
   Gamepad,
   BrainCircuit,
-  Settings
+  Settings,
+  Youtube
 } from 'lucide-react';
 import { Account } from '../types';
 
@@ -52,6 +53,13 @@ export default function Sidebar({
       icon: FolderOpen,
       roles: ['Admin', 'Giáo viên', 'Học sinh', 'Phụ huynh'],
       color: 'text-brand-orange'
+    },
+    {
+      id: 'youtube-learning',
+      label: 'Góc tự học (Video)',
+      icon: Youtube,
+      roles: ['all'],
+      color: 'text-red-500 font-semibold'
     },
     {
       id: 'accounts',

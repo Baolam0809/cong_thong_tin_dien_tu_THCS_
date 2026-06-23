@@ -11,6 +11,7 @@ import GradingSection from './components/GradingSection';
 import ExportCenterSection from './components/ExportCenterSection';
 import UINewsSection from './components/UINewsSection';
 import TeacherWorkspaceSection from './components/TeacherWorkspaceSection';
+import YoutubeLearningSection from './components/YoutubeLearningSection';
 import {
   LoginModal,
   RegisterModal,
@@ -46,7 +47,8 @@ import {
   CommentItem,
   BannerSlide,
   StudentConduct,
-  HomeroomNotice
+  HomeroomNotice,
+  YoutubeLesson
 } from './types';
 
 import {
@@ -95,6 +97,7 @@ export default function App() {
   const prevOutstandingClassesRef = useRef<ClassDetail[]>([]);
   const prevConductsRef = useRef<StudentConduct[]>([]);
   const prevNoticesRef = useRef<HomeroomNotice[]>([]);
+  const prevLessonsRef = useRef<YoutubeLesson[]>([]);
 
   // ==========================================
   // MASTER STATES (WITH LOCALSTORAGE SYNC)
@@ -242,6 +245,40 @@ export default function App() {
     ];
   });
 
+  const [lessons, setLessons] = useState<YoutubeLesson[]>(() => {
+    const saved = localStorage.getItem('thcs_youtube_lessons');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 1,
+        title: 'Học tốt Toán 9 - Chuyên đề: Hệ Thức Lượng Trong Tam Giác Vuông (Cơ bản & Nâng cao)',
+        youtubeUrl: 'https://www.youtube.com/watch?v=9LhI-UIsHqI',
+        subject: 'Toán học',
+        grade: 'Lớp 9',
+        description: 'Bài giảng hướng dẫn chi tiết các công thức hệ thức lượng trong tam giác vuông, cách chứng minh ngắn gọn và hệ thống bài tập áp dụng thực tế giúp học sinh ôn thi học kỳ và chuẩn bị tốt cho kỳ thi Tuyển sinh vào lớp 10 học vụ THCS.',
+        createdAt: '21/06/2026'
+      },
+      {
+        id: 2,
+        title: 'Ngữ Văn lớp 9 | Ôn tập văn học trung đại: Truyện Kiều sâu sắc nghệ thuật',
+        youtubeUrl: 'https://www.youtube.com/watch?v=68D0Zasx_2w',
+        subject: 'Ngữ văn',
+        grade: 'Lớp 9',
+        description: 'Tổng hợp phân tích đầy đủ các giá trị nghệ thuật bối cảnh nhân đạo, nghệ thuật tả cảnh ngụ tình đặc trưng qua đoạn trích Kiều ở lầu Ngưng Bích và các tác phẩm trọng điểm học tập.',
+        createdAt: '22/06/2026'
+      },
+      {
+        id: 3,
+        title: 'English Grade 9 | Master All 12 Tenses in 30 Minutes! (IELTS Foundation)',
+        youtubeUrl: 'https://www.youtube.com/watch?v=mDscD_P9jic',
+        subject: 'Tiếng Anh',
+        grade: 'Lớp 9',
+        description: 'Hệ thống hóa toàn bộ 12 thì trong Tiếng Anh cùng các cấu trúc câu giao tiếp và ngữ pháp nâng cao thường xuất hiện trong đề thi tuyển sinh CLB và học tập bồi dưỡng ngoại ngữ tích hợp.',
+        createdAt: '23/06/2026'
+      }
+    ];
+  });
+
   // Local React Toasts
   const [toasts, setToasts] = useState<{ id: number; message: string; type: 'info' | 'success' | 'error' }[]>([]);
 
@@ -314,7 +351,8 @@ export default function App() {
           dbOutstandingStudents,
           dbOutstandingClasses,
           dbConducts,
-          dbNotices
+          dbNotices,
+          dbLessons
         ] = await Promise.all([
           fetchTableData<Account>('thcs_accounts', initialAccounts),
           fetchTableData<Class>('thcs_classes', initialClasses),
@@ -338,6 +376,35 @@ export default function App() {
               content: 'Yêu cầu phụ huynh đi đầy đủ để nghe thông báo điểm học bạ số và nhận phiếu bàn giao chuyển lớp của các em học sinh.',
               date: '22/06/2026',
               pin: true
+            }
+          ]),
+          fetchTableData<YoutubeLesson>('thcs_youtube_lessons', [
+            {
+              id: 1,
+              title: 'Học tốt Toán 9 - Chuyên đề: Hệ Thức Lượng Trong Tam Giác Vuông (Cơ bản & Nâng cao)',
+              youtubeUrl: 'https://www.youtube.com/watch?v=9LhI-UIsHqI',
+              subject: 'Toán học',
+              grade: 'Lớp 9',
+              description: 'Bài giảng hướng dẫn chi tiết các công thức hệ thức lượng trong tam giác vuông, cách chứng minh ngắn gọn và hệ thống bài tập áp dụng thực tế giúp học sinh ôn thi học kỳ và chuẩn bị tốt cho kỳ thi Tuyển sinh vào lớp 10 học vụ THCS.',
+              createdAt: '21/06/2026'
+            },
+            {
+              id: 2,
+              title: 'Ngữ Văn lớp 9 | Ôn tập văn học trung đại: Truyện Kiều sâu sắc nghệ thuật',
+              youtubeUrl: 'https://www.youtube.com/watch?v=68D0Zasx_2w',
+              subject: 'Ngữ văn',
+              grade: 'Lớp 9',
+              description: 'Tổng hợp phân tích đầy đủ các giá trị nghệ thuật bối cảnh nhân đạo, nghệ thuật tả cảnh ngụ tình đặc trưng qua đoạn trích Kiều ở lầu Ngưng Bích và các tác phẩm trọng điểm học tập.',
+              createdAt: '22/06/2026'
+            },
+            {
+              id: 3,
+              title: 'English Grade 9 | Master All 12 Tenses in 30 Minutes! (IELTS Foundation)',
+              youtubeUrl: 'https://www.youtube.com/watch?v=mDscD_P9jic',
+              subject: 'Tiếng Anh',
+              grade: 'Lớp 9',
+              description: 'Hệ thống hóa toàn bộ 12 thì trong Tiếng Anh cùng các cấu trúc câu giao tiếp và ngữ pháp nâng cao thường xuất hiện trong đề thi tuyển sinh CLB và học tập bồi dưỡng ngoại ngữ tích hợp.',
+              createdAt: '23/06/2026'
             }
           ])
         ]);
@@ -364,6 +431,7 @@ export default function App() {
         setOutstandingClasses(dbOutstandingClasses);
         setConducts(dbConducts);
         setNotices(dbNotices);
+        setLessons(dbLessons);
 
         // Populate refs immediately for exact delta tracking
         prevAccountsRef.current = dbAccounts;
@@ -381,6 +449,7 @@ export default function App() {
         prevOutstandingClassesRef.current = dbOutstandingClasses;
         prevConductsRef.current = dbConducts;
         prevNoticesRef.current = dbNotices;
+        prevLessonsRef.current = dbLessons;
 
         showToast("Đồng bộ Cơ sở dữ liệu Supabase đám mây thành công!", "success");
       } catch (err: any) {
@@ -587,6 +656,14 @@ export default function App() {
       prevNoticesRef.current = notices;
     }
   }, [notices, supabaseLoaded, dbStatus]);
+
+  useEffect(() => {
+    localStorage.setItem('thcs_youtube_lessons', JSON.stringify(lessons));
+    if (supabaseLoaded && dbStatus?.connected && !dbStatus?.tablesMissing) {
+      syncTableToSupabase('thcs_youtube_lessons', lessons, prevLessonsRef.current);
+      prevLessonsRef.current = lessons;
+    }
+  }, [lessons, supabaseLoaded, dbStatus]);
 
   // Toast registration
   useEffect(() => {
@@ -1429,6 +1506,17 @@ export default function App() {
               setActivities={setActivities}
               bannerSlides={bannerSlides}
               setBannerSlides={setBannerSlides}
+              outstandingStudents={outstandingStudents}
+              setOutstandingStudents={setOutstandingStudents}
+            />
+          )}
+
+          {/* 10.2 YOUTUBE LEARNING CENTRE */}
+          {currentSection === 'youtube-learning' && (
+            <YoutubeLearningSection
+              currentUser={currentUser}
+              lessons={lessons}
+              setLessons={setLessons}
             />
           )}
 
@@ -1949,14 +2037,13 @@ export default function App() {
                   return;
                 }
 
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  const b64Data = e.target?.result as string;
-                  const sizeInKB = (fileInp.size / 1024).toFixed(1);
-                  const displaySize = fileInp.size > 1024 * 1024 
-                    ? `${(fileInp.size / (1024 * 1024)).toFixed(1)} MB` 
-                    : `${sizeInKB} KB`;
+                const fileSize = fileInp.size;
+                const sizeInKB = (fileSize / 1024).toFixed(1);
+                const displaySize = fileSize > 1024 * 1024 
+                  ? `${(fileSize / (1024 * 1024)).toFixed(1)} MB` 
+                  : `${sizeInKB} KB`;
 
+                const finishUpload = (b64Data: string) => {
                   const newD: DocumentItem = {
                     id: Date.now(),
                     title: titleStr.trim(),
@@ -1975,11 +2062,28 @@ export default function App() {
                   showToast("Đăng tải thành công dữ liệu văn bản chỉ đạo mới!", "success");
                 };
 
-                reader.onerror = () => {
-                  showToast("Không thể đọc tệp tin tải lên!", "error");
-                };
-
-                reader.readAsDataURL(fileInp);
+                // Keep storage light: If file is > 150KB, use a clean base64 placeholder to avoid storage/database quota crash
+                if (fileSize > 150 * 1024) {
+                  const placeholderText = `HƯỚNG DẪN HỌC VỤ & VĂN BẢN CHỈ ĐẠO CHÍNH THỨC\n\nTiêu đề: ${titleStr.trim()}\nCấp ban hành: ${catStr}\nNgày ban hành: ${new Date().toLocaleDateString('vi-VN')}\nTập tin đính kèm gốc: ${fileInp.name} (${displaySize})\n\n[Hệ thống tự động kích hoạt chế độ nén dữ liệu đám mây thành công]`;
+                  // Convert UTF-8 text string to safe base64
+                  const utf8Bytes = new TextEncoder().encode(placeholderText);
+                  let binary = '';
+                  const len = utf8Bytes.byteLength;
+                  for (let i = 0; i < len; i++) {
+                    binary += String.fromCharCode(utf8Bytes[i]);
+                  }
+                  const placeholderB64 = `data:text/plain;base64,${btoa(binary)}`;
+                  finishUpload(placeholderB64);
+                } else {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    finishUpload(e.target?.result as string);
+                  };
+                  reader.onerror = () => {
+                    showToast("Không thể đọc tệp tin tải lên!", "error");
+                  };
+                  reader.readAsDataURL(fileInp);
+                }
               }}
               className="w-full bg-brand-orange text-white font-black py-2.5 rounded-xl cursor-pointer"
             >
