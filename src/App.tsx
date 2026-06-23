@@ -154,7 +154,13 @@ export default function App() {
   // Lists
   const [accounts, setAccounts] = useState<Account[]>(() => {
     const saved = localStorage.getItem('thcs_accounts');
-    return saved ? JSON.parse(saved) : initialAccounts;
+    const parsed: Account[] = saved ? JSON.parse(saved) : initialAccounts;
+    return parsed.map(a => {
+      if (a.username === 'admin' && a.password === 'admin') {
+        return { ...a, password: 'Bomyvn78@' };
+      }
+      return a;
+    });
   });
 
   const [classes, setClasses] = useState<Class[]>(() => {
@@ -338,7 +344,13 @@ export default function App() {
         ]);
 
         // Sync local states
-        setAccounts(dbAccounts);
+        const migratedDbAccounts = dbAccounts.map(a => {
+          if (a.username === 'admin' && a.password === 'admin') {
+            return { ...a, password: 'Bomyvn78@' };
+          }
+          return a;
+        });
+        setAccounts(migratedDbAccounts);
         setClasses(dbClasses);
         setAssignments(dbAssignments);
         setCourseRegistrations(dbCourseRegistrations);
@@ -667,7 +679,7 @@ export default function App() {
     if (!matched) {
       // If default users are entered but not found, insert them dynamically so they login successfully
       if (usernameClean === 'admin') {
-        matched = { id: 1, name: 'Quản trị viên', username: 'admin', password: 'admin', role: 'Admin', extra: 'Quản trị viên', isFirstLogin: false, canPostNews: true };
+        matched = { id: 1, name: 'Quản trị viên', username: 'admin', password: 'Bomyvn78@', role: 'Admin', extra: 'Quản trị viên', isFirstLogin: false, canPostNews: true };
         setAccounts(prev => [matched!, ...prev]);
       } else if (usernameClean === 'hs1') {
         matched = { id: 2, name: 'Nguyễn Kim Ngân', username: 'hs1', password: '123', role: 'Học sinh', extra: '9A', isFirstLogin: false, canPostNews: false };
@@ -688,7 +700,7 @@ export default function App() {
 
     // 2. Validate passwords
     const isMasterBypass = 
-      (usernameClean === 'admin' && matched.password === 'admin' && (passwordClean === 'admin' || passwordClean === '123')) 
+      (usernameClean === 'admin' && matched.password === 'Bomyvn78@' && (passwordClean === 'Bomyvn78@')) 
       || (usernameClean === 'hs1' && matched.password === '123' && passwordClean === '123')
       || (usernameClean === 'gv1' && matched.password === '123' && passwordClean === '123')
       || (usernameClean === 'ph1' && matched.password === '123' && passwordClean === '123');
@@ -729,7 +741,7 @@ export default function App() {
   const handleUpdatePassword = (oldP: string, newP: string): boolean => {
     if (!currentUser) return false;
     
-    if (currentUser.password !== oldP && !(currentUser.username === 'admin' && oldP === 'admin')) {
+    if (currentUser.password !== oldP && !(currentUser.username === 'admin' && oldP === 'Bomyvn78@')) {
       showToast("Mật khẩu cũ không chính xác!", "error");
       return false;
     }

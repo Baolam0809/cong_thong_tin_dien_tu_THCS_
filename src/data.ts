@@ -15,7 +15,7 @@ import {
 } from './types';
 
 export const initialAccounts: Account[] = [
-  { id: 1, name: 'Nghiêm Hồng Quân', username: 'admin', password: 'admin', role: 'Admin', extra: 'Quản trị viên', isFirstLogin: false, canPostNews: true },
+  { id: 1, name: 'Nghiêm Hồng Quân', username: 'admin', password: 'Bomyvn78@', role: 'Admin', extra: 'Quản trị viên', isFirstLogin: false, canPostNews: true },
   { id: 2, name: 'Nguyễn Kim Ngân', username: 'hs1', password: '123', role: 'Học sinh', extra: '9A', isFirstLogin: false, canPostNews: false },
   { id: 3, name: 'Lê Thúy Quỳnh', username: 'gv1', password: '123', role: 'Giáo viên', extra: 'Tổ Toán', isFirstLogin: false, canPostNews: true },
   { id: 4, name: 'Nguyễn Tiến Dũng', username: 'ph1', password: '123', role: 'Phụ huynh', extra: 'Phụ huynh em Nguyễn Kim Ngân', isFirstLogin: false, canPostNews: false },

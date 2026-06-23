@@ -36,8 +36,8 @@ interface LoginModalProps {
 }
 export function LoginModal({ isOpen, onClose, onExecuteLogin, onSwitchToRegister, onOpenForgot }: LoginModalProps) {
   const [activeTab, setActiveTab] = useState<'general' | 'admin'>('general');
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   if (!isOpen) return null;
 
@@ -101,7 +101,7 @@ export function LoginModal({ isOpen, onClose, onExecuteLogin, onSwitchToRegister
           </div>
 
           <p className="text-[10px] text-slate-450 italic font-semibold leading-relaxed">
-            * Mẹo trải nghiệm: Quản trị viên sử dụng tài khoản <b className="text-brand-orange-dark">admin / admin</b>. Học viên dùng tài khoản <b className="text-brand-blue">hs1 / 123</b>. Giáo viên dùng tài khoản <b className="text-brand-blue">gv1 / 123</b>.
+            * Mẹo trải nghiệm: Học viên dùng tài khoản <b className="text-brand-blue">hs1 / 123</b>. Giáo viên dùng tài khoản <b className="text-brand-blue">gv1 / 123</b>. Phụ huynh dùng <b className="text-brand-blue">ph1 / 123</b>.
           </p>
 
           <div className="text-right">
@@ -407,7 +407,7 @@ export function ChangePasswordModal({ isOpen, isForced, onClose, onExecuteUpdate
           <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-3 text-[10.5px] font-extrabold mb-4 leading-relaxed flex gap-1.5">
             <ShieldAlert className="w-6 h-6 text-rose-600 shrink-0" />
             <span>
-              Để bảo vệ tuyệt đối an toàn thông tin cá nhân học vụ, hệ thống yêu cầu quý vụ cập nhật mật mã mới thay thế cho mật khẩu mặc định (123 / admin)!
+              Để bảo vệ tuyệt đối an toàn thông tin cá nhân học vụ, hệ thống yêu cầu quý vụ cập nhật mật mã mới thay thế cho mật khẩu mặc định ban đầu!
             </span>
           </div>
         )}
