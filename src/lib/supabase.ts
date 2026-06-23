@@ -8,8 +8,8 @@ const SUPABASE_URL = ((import.meta as any).env?.VITE_SUPABASE_URL as string) || 
 // Row Level Security (RLS) policies completely. Since the user explicitly provided both,
 // we default to the service role key to ensure the application works out-of-the-box and
 // bypasses any RLS constraints on newly created tables, making the prototype 100% functional.
-const SUPABASE_KEY = ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string) || 
-                     ((import.meta as any).env?.VITE_SUPABASE_SERVICE_ROLE_KEY as string) ||
+const SUPABASE_KEY = ((import.meta as any).env?.VITE_SUPABASE_SERVICE_ROLE_KEY as string) || 
+                     ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string) ||
                      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXZ5bmxqa2Jhdnp0ZHNmbXpxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjAyOTYyNSwiZXhwIjoyMDk3NjA1NjI1fQ.sNb-YHQMe8NJiaBuj4IdWUvNjim4fC1DqM2Z2-_Zs9k'; // User's Explicit Service Key
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -134,14 +134,54 @@ export async function fetchTableData<T>(tableName: string, fallbackData: T[]): P
 }
 
 /**
+ * Sanitizes row based on target schema definition to avoid unknown column errors (e.g. subjectClassPairs)
+ */
+export function sanitizeRowForTable(tableName: string, row: any): any {
+  if (!row) return row;
+  const clean: any = {};
+  
+  // Map exact actual schema definitions to prevent schema cache / column mismatch errors
+  const schemas: Record<string, string[]> = {
+    thcs_accounts: ['id', 'name', 'username', 'password', 'role', 'extra', 'isFirstLogin', 'canPostNews'],
+    thcs_classes: ['id', 'khoi', 'lop', 'gvcn', 'total'],
+    thcs_assignments: ['id', 'teacherId', 'teacherName', 'subjects', 'classes', 'subjectClassPairs'],
+    thcs_course_registrations: ['id', 'studentName', 'classInfo', 'courses', 'file', 'status', 'date'],
+    thcs_surveys: ['id', 'parentName', 'studentName', 'classInfo', 'topic', 'rating', 'content', 'file', 'status', 'date'],
+    thcs_exams: ['id', 'subject', 'type', 'duration', 'teacher', 'correctAnswers', 'mcqMaxScore', 'essayMaxScore', 'essayQuestion', 'targetType', 'targetValue', 'examFile'],
+    thcs_homework: ['id', 'subject', 'title', 'content', 'deadline', 'targetType', 'targetValue', 'homeworkFile'],
+    thcs_submissions: ['id', 'student', 'class', 'subject', 'type', 'date', 'submissionType', 'text', 'fileData', 'answers', 'mcqScore', 'mcqMaxScore', 'essayScore', 'essayMaxScore', 'grade', 'remark', 'isSynced'],
+    thcs_documents: ['id', 'title', 'category', 'date', 'file'],
+    thcs_notifications: ['id', 'date', 'isNew', 'source', 'title', 'content'],
+    thcs_activities: ['id', 'title', 'category', 'date', 'desc', 'content', 'img', 'likes', 'likedByUser', 'comments'],
+    thcs_outstanding_students: ['id', 'name', 'class', 'badge', 'gpa', 'conduct', 'avatar', 'achievements', 'subjects', 'guestbook'],
+    thcs_outstanding_classes: ['id', 'lop', 'gvcn', 'slogan', 'icon', 'iconColor', 'total', 'achievements', 'guestbook'],
+    thcs_student_conducts: ['id', 'studentName', 'className', 'conduct', 'attendance', 'scoreBehavior', 'teacherNote', 'updateDate'],
+    thcs_homeroom_notices: ['id', 'className', 'title', 'content', 'date', 'pin']
+  };
+
+  const allowedFields = schemas[tableName];
+  if (!allowedFields) {
+    return row;
+  }
+
+  for (const [key, val] of Object.entries(row)) {
+    if (allowedFields.includes(key)) {
+      clean[key] = val;
+    }
+  }
+  return clean;
+}
+
+/**
  * Seed a table with fallback/initial state data
  */
 export async function seedTable(tableName: string, initialData: any[]): Promise<boolean> {
   if (!initialData || initialData.length === 0) return true;
   try {
     const formattedRows = initialData.map(item => {
+      const sanitized = sanitizeRowForTable(tableName, item);
       const row: any = {};
-      for (const [key, value] of Object.entries(item)) {
+      for (const [key, value] of Object.entries(sanitized)) {
         if (value && (typeof value === 'object' || Array.isArray(value))) {
           row[key] = value; // JSONB columns are perfectly serialized by supabase js
         } else {
@@ -154,6 +194,13 @@ export async function seedTable(tableName: string, initialData: any[]): Promise<
     const { error } = await supabase.from(tableName).upsert(formattedRows);
     if (error) {
       console.error(`[Supabase Seed] Failed to seed ${tableName}:`, error.message);
+      // Double safe fallback: if subjectClassPairs failed, delete it dynamically and try again
+      if (tableName === 'thcs_assignments' && error.message.includes('subjectClassPairs')) {
+        console.warn(`[Supabase Seed] Assignment table missing column, retrying seed with sanitized attributes...`);
+        const pureRows = formattedRows.map(({ subjectClassPairs, ...rest }) => rest);
+        const { error: retryError } = await supabase.from(tableName).upsert(pureRows);
+        return !retryError;
+      }
       return false;
     }
     console.log(`[Supabase Seed] Seeded table ${tableName} successfully with ${initialData.length} records.`);
@@ -188,8 +235,9 @@ export async function syncTableToSupabase(
     // 2. Upsert current list (handles inserts and updates)
     if (currentList.length > 0) {
       const formattedRows = currentList.map(item => {
+        const sanitized = sanitizeRowForTable(tableName, item);
         const row: any = {};
-        for (const [key, value] of Object.entries(item)) {
+        for (const [key, value] of Object.entries(sanitized)) {
           if (value && (typeof value === 'object' || Array.isArray(value))) {
             row[key] = value; // Postgres JSONB support
           } else {
@@ -202,6 +250,13 @@ export async function syncTableToSupabase(
       const { error: upsertError } = await supabase.from(tableName).upsert(formattedRows);
       if (upsertError) {
         console.warn(`[Supabase Sync] Upsert mismatch on ${tableName}:`, upsertError.message);
+        // Double safe fallback: if subjectClassPairs failed, delete it dynamically and retry
+        if (tableName === 'thcs_assignments' && upsertError.message.includes('subjectClassPairs')) {
+          console.warn(`[Supabase Sync] Retrying sync without subjectClassPairs...`);
+          const pureRows = formattedRows.map(({ subjectClassPairs, ...rest }) => rest);
+          const { error: retryError } = await supabase.from(tableName).upsert(pureRows);
+          return !retryError;
+        }
         return false;
       }
     }
@@ -243,7 +298,8 @@ CREATE TABLE IF NOT EXISTS thcs_assignments (
   "teacherId" BIGINT,
   "teacherName" TEXT,
   subjects JSONB DEFAULT '[]'::jsonb,
-  classes JSONB DEFAULT '[]'::jsonb
+  classes JSONB DEFAULT '[]'::jsonb,
+  "subjectClassPairs" JSONB DEFAULT '[]'::jsonb
 );
 
 -- 4. Bảng Course Registrations
