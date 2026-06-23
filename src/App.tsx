@@ -101,6 +101,7 @@ export default function App() {
   const prevNoticesRef = useRef<HomeroomNotice[]>([]);
   const prevLessonsRef = useRef<YoutubeLesson[]>([]);
   const prevSchedulesRef = useRef<UpcomingSchedule[]>([]);
+  const prevSettingsRef = useRef<any[]>([]);
 
   // ==========================================
   // MASTER STATES (WITH LOCALSTORAGE SYNC)
@@ -365,7 +366,8 @@ export default function App() {
           dbConducts,
           dbNotices,
           dbLessons,
-          dbSchedules
+          dbSchedules,
+          dbSettings
         ] = await Promise.all([
           fetchTableData<Account>('thcs_accounts', initialAccounts),
           fetchTableData<Class>('thcs_classes', initialClasses),
@@ -424,6 +426,30 @@ export default function App() {
               description: 'Hệ thống hóa toàn bộ 12 thì trong Tiếng Anh cùng các cấu trúc câu giao tiếp và ngữ pháp nâng cao thường xuất hiện trong đề thi tuyển sinh CLB và học tập bồi dưỡng ngoại ngữ tích hợp.',
               createdAt: '23/06/2026'
             }
+          ]),
+          fetchTableData<any>('thcs_settings', [
+            {
+              id: 1,
+              bannerUrl: '',
+              logoUrl: '',
+              marqueeText: '🚀 Chào mừng quý thầy cô, các bậc phụ huynh và các em học sinh đến với Cổng thông tin điện tử Trường THCS Hòa Phú! Chuyển đổi số học vụ nâng cao hiệu suất dạy và học!',
+              bannerSlides: [
+                {
+                  id: "default-1",
+                  type: "url",
+                  source: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=800",
+                  title: "Hoạt động học tập sôi nổi của học sinh",
+                  createdAt: new Date().toISOString()
+                },
+                {
+                  id: "default-2",
+                  type: "url",
+                  source: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=800",
+                  title: "Phong trào thể thao và ngoại khóa rèn luyện",
+                  createdAt: new Date().toISOString()
+                }
+              ]
+            }
           ])
         ]);
 
@@ -452,6 +478,16 @@ export default function App() {
         setLessons(dbLessons);
         setSchedules(dbSchedules);
 
+        if (dbSettings && dbSettings.length > 0) {
+          const s = dbSettings[0];
+          if (s.bannerUrl !== undefined) setBannerUrl(s.bannerUrl || '');
+          if (s.logoUrl !== undefined) setLogoUrl(s.logoUrl || '');
+          if (s.marqueeText !== undefined) setMarqueeText(s.marqueeText || '');
+          if (Array.isArray(s.bannerSlides)) {
+            setBannerSlides(s.bannerSlides);
+          }
+        }
+
         // Populate refs immediately for exact delta tracking
         prevAccountsRef.current = dbAccounts;
         prevClassesRef.current = dbClasses;
@@ -470,6 +506,7 @@ export default function App() {
         prevNoticesRef.current = dbNotices;
         prevLessonsRef.current = dbLessons;
         prevSchedulesRef.current = dbSchedules;
+        prevSettingsRef.current = dbSettings;
 
         showToast("Đồng bộ Cơ sở dữ liệu Supabase đám mây thành công!", "success");
       } catch (err: any) {
@@ -513,6 +550,64 @@ export default function App() {
             pin: true
           }
         ], []),
+        syncTableToSupabase('thcs_schedules', [
+          { id: 1, title: 'Lịch thi giữa kỳ II', description: 'Thời hạn: Trọng tâm Khối 6,7,8,9', date: '22/06', colorType: 'orange' },
+          { id: 2, title: 'Kỳ thi cuối kỳ II', description: 'Thi học vụ, học bạ số hóa', date: '30/06', colorType: 'rose' },
+          { id: 3, title: 'Đồng bộ liên lạc điện tử', description: 'Họp phụ huynh trao đổi học vụ', date: '10/07', colorType: 'purple' },
+        ], []),
+        syncTableToSupabase('thcs_youtube_lessons', [
+          {
+            id: 1,
+            title: 'Học tốt Toán 9 - Chuyên đề: Hệ Thức Lượng Trong Tam Giác Vuông (Cơ bản & Nâng cao)',
+            youtubeUrl: 'https://www.youtube.com/watch?v=9LhI-UIsHqI',
+            subject: 'Toán học',
+            grade: 'Lớp 9',
+            description: 'Bài giảng hướng dẫn chi tiết các công thức hệ thức lượng trong tam giác vuông, cách chứng minh ngắn gọn và hệ thống bài tập áp dụng thực tế giúp học sinh ôn thi học kỳ và chuẩn bị tốt cho kỳ thi Tuyển sinh vào lớp 10 học vụ THCS.',
+            createdAt: '21/06/2026'
+          },
+          {
+            id: 2,
+            title: 'Ngữ Văn lớp 9 | Ôn tập văn học trung đại: Truyện Kiều sâu sắc nghệ thuật',
+            youtubeUrl: 'https://www.youtube.com/watch?v=68D0Zasx_2w',
+            subject: 'Ngữ văn',
+            grade: 'Lớp 9',
+            description: 'Tổng hợp phân tích đầy đủ các giá trị nghệ thuật bối cảnh nhân đạo, nghệ thuật tả cảnh ngụ tình đặc trưng qua đoạn trích Kiều ở lầu Ngưng Bích và các tác phẩm trọng điểm học tập.',
+            createdAt: '22/06/2026'
+          },
+          {
+            id: 3,
+            title: 'English Grade 9 | Master All 12 Tenses in 30 Minutes! (IELTS Foundation)',
+            youtubeUrl: 'https://www.youtube.com/watch?v=mDscD_P9jic',
+            subject: 'Tiếng Anh',
+            grade: 'Lớp 9',
+            description: 'Hệ thống hóa toàn bộ 12 thì trong Tiếng Anh cùng các cấu trúc câu giao tiếp và ngữ pháp nâng cao thường xuất hiện trong đề thi tuyển sinh CLB và học tập bồi dưỡng ngoại ngữ tích hợp.',
+            createdAt: '23/06/2026'
+          }
+        ], []),
+        syncTableToSupabase('thcs_settings', [
+          {
+            id: 1,
+            bannerUrl: '',
+            logoUrl: '',
+            marqueeText: '🚀 Chào mừng quý thầy cô, các bậc phụ huynh và các em học sinh đến với Cổng thông tin điện tử Trường THCS Hòa Phú! Chuyển đổi số học vụ nâng cao hiệu suất dạy và học!',
+            bannerSlides: [
+              {
+                id: "default-1",
+                type: "url",
+                source: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=800",
+                title: "Hoạt động học tập sôi nổi của học sinh",
+                createdAt: new Date().toISOString()
+              },
+              {
+                id: "default-2",
+                type: "url",
+                source: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=800",
+                title: "Phong trào thể thao và ngoại khóa rèn luyện",
+                createdAt: new Date().toISOString()
+              }
+            ]
+          }
+        ], [])
       ]);
       showToast("Khởi tạo & nạp dữ liệu mẫu lên Supabase thành công!", "success");
       // Re-trigger load
@@ -542,20 +637,23 @@ export default function App() {
   }, [currentUser]);
 
   useEffect(() => {
-    localStorage.setItem('thcs_banner_url', bannerUrl);
-  }, [bannerUrl]);
-
-  useEffect(() => {
-    localStorage.setItem('thcs_logo_url', logoUrl);
-  }, [logoUrl]);
-
-  useEffect(() => {
-    localStorage.setItem('thcs_marquee_text', marqueeText);
-  }, [marqueeText]);
-
-  useEffect(() => {
+    localStorage.setItem('thcs_banner_url', bannerUrl || '');
+    localStorage.setItem('thcs_logo_url', logoUrl || '');
+    localStorage.setItem('thcs_marquee_text', marqueeText || '');
     localStorage.setItem('thcs_banner_slides', JSON.stringify(bannerSlides));
-  }, [bannerSlides]);
+
+    if (supabaseLoaded && dbStatus?.connected && !dbStatus?.tablesMissing) {
+      const currentSettings = [{
+        id: 1,
+        bannerUrl,
+        logoUrl,
+        marqueeText,
+        bannerSlides
+      }];
+      syncTableToSupabase('thcs_settings', currentSettings, prevSettingsRef.current);
+      prevSettingsRef.current = currentSettings;
+    }
+  }, [bannerUrl, logoUrl, marqueeText, bannerSlides, supabaseLoaded, dbStatus]);
 
   useEffect(() => {
     localStorage.setItem('thcs_accounts', JSON.stringify(accounts));
@@ -2281,7 +2379,7 @@ export default function App() {
                     </div>
                     <div>
                       <div className="font-bold text-sm text-left">
-                        {!dbStatus.tablesMissing ? 'Bảng dữ liệu khỏe mạnh (13/13)' : 'Thiếu bảng dữ liệu trong cơ sở dữ liệu'}
+                        {!dbStatus.tablesMissing ? 'Bảng dữ liệu khỏe mạnh (18/18)' : 'Thiếu bảng dữ liệu trong cơ sở dữ liệu'}
                       </div>
                       <div className="text-xs text-slate-500 font-medium text-left">
                         {!dbStatus.tablesMissing 

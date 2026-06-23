@@ -42,7 +42,10 @@ const ALL_TABLE_NAMES = [
   'thcs_outstanding_students',
   'thcs_outstanding_classes',
   'thcs_student_conducts',
-  'thcs_homeroom_notices'
+  'thcs_homeroom_notices',
+  'thcs_schedules',
+  'thcs_youtube_lessons',
+  'thcs_settings'
 ];
 
 /**
@@ -169,7 +172,9 @@ export function sanitizeRowForTable(tableName: string, row: any): any {
     thcs_outstanding_classes: ['id', 'lop', 'gvcn', 'slogan', 'icon', 'iconColor', 'total', 'achievements', 'guestbook'],
     thcs_student_conducts: ['id', 'studentName', 'className', 'conduct', 'attendance', 'scoreBehavior', 'teacherNote', 'updateDate'],
     thcs_homeroom_notices: ['id', 'className', 'title', 'content', 'date', 'pin'],
-    thcs_schedules: ['id', 'title', 'description', 'date', 'colorType']
+    thcs_schedules: ['id', 'title', 'description', 'date', 'colorType'],
+    thcs_youtube_lessons: ['id', 'title', 'youtubeUrl', 'subject', 'grade', 'description', 'createdAt'],
+    thcs_settings: ['id', 'bannerUrl', 'logoUrl', 'marqueeText', 'bannerSlides']
   };
 
   const allowedFields = schemas[tableName];
@@ -478,4 +483,24 @@ CREATE TABLE IF NOT EXISTS thcs_schedules (
   description TEXT,
   date TEXT NOT NULL,
   "colorType" TEXT DEFAULT 'orange'
+);
+
+-- 17. Bảng Video bài giảng Youtube
+CREATE TABLE IF NOT EXISTS thcs_youtube_lessons (
+  id BIGINT PRIMARY KEY,
+  title TEXT NOT NULL,
+  "youtubeUrl" TEXT NOT NULL,
+  subject TEXT,
+  grade TEXT,
+  description TEXT,
+  "createdAt" TEXT
+);
+
+-- 18. Bảng Thiết lập / Cấu hình trường học
+CREATE TABLE IF NOT EXISTS thcs_settings (
+  id INT PRIMARY KEY,
+  "bannerUrl" TEXT,
+  "logoUrl" TEXT,
+  "marqueeText" TEXT,
+  "bannerSlides" JSONB
 );`;
