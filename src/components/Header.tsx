@@ -257,15 +257,7 @@ export default function Header({
                         />
                       )}
 
-                      {/* Transparent info plate */}
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-3 pt-6 pb-2 text-left z-20">
-                        <span className="inline-block bg-brand-orange text-white text-[8px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded shadow-sm mb-1">
-                          {media.type === 'youtube' ? 'VIDEO TRẢI NGHIỆM 📺' : 'ẢNH SỰ KIỆN 📸'}
-                        </span>
-                        <p className="text-[10px] md:text-[11px] font-extrabold text-white truncate drop-shadow">
-                          {slide.title || "Hoạt động Đội, văn nghệ & thể thao nhà trường"}
-                        </p>
-                      </div>
+                      {/* Text overlays are removed per request for a fully clean slide preview */}
                     </div>
                   );
                 })}

@@ -19,12 +19,15 @@ import {
   Download,
   CheckCircle2,
   AlertCircle,
-  X
+  X,
+  RefreshCw,
+  Database
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Account, Class, Assignment, Exam, Homework } from '../types';
 import { showToast } from './Toast';
 import { fullSubjects } from '../data';
+import { fetchTableData, syncTableToSupabase } from '../lib/supabase';
 
 interface AdminSectionsProps {
   currentSection: 'accounts' | 'classes' | 'subjects' | 'exams' | 'homework';
@@ -84,6 +87,7 @@ export default function AdminSections({
   const [showBulk, setShowBulk] = useState(false);
   const [importedAccounts, setImportedAccounts] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const saveHomeworkStateForUndo = () => {
     setHomeworkHistory(prev => [...prev, [...homework]]);
@@ -106,6 +110,97 @@ export default function AdminSections({
       }
       setAccounts(prev => prev.filter(a => a.id !== id));
       showToast(`Đã xóa tài khoản: ${username}`, "success");
+    };
+
+    const handleExportAccounts = () => {
+      try {
+        const dataToExport = accounts.map((a, idx) => ({
+          "STT": idx + 1,
+          "Họ và Tên Nhân Sự": a.name,
+          "Tài khoản đăng nhập": a.username,
+          "Mật khẩu ban hành": a.password,
+          "Vai trò chức vụ": a.role,
+          "Thông tin đính danh": a.extra || "",
+          "Quyền đăng bài": a.canPostNews ? "Cho phép đăng tin" : "Mặc định",
+          "Trạng thái đăng nhập": a.isFirstLogin === false ? "Đã hoạt động" : "Có hiệu lực"
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        ws['!cols'] = [
+          { wch: 6 },
+          { wch: 25 },
+          { wch: 20 },
+          { wch: 18 },
+          { wch: 15 },
+          { wch: 30 },
+          { wch: 18 },
+          { wch: 20 }
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "DanhSachTaiKhoanHeThong");
+        XLSX.writeFile(wb, "Danh_sach_tai_khoan_Thcs_Hoa_Phu_Hien_Tai.xlsx");
+        showToast("Tải danh sách đăng ký tài khoản hiện tại về máy tính thành công!", "success");
+      } catch (err: any) {
+        showToast(`Không thể tạo file danh sách xuất khẩu: ${err.message}`, "error");
+      }
+    };
+
+    const handleSyncAccounts = async () => {
+      if (isSyncing) return;
+      setIsSyncing(true);
+      try {
+        showToast("Đang kết nối Cloud để đồng bộ hóa tài khoản...", "info");
+        const dbAccs = await fetchTableData<Account>('thcs_accounts', []);
+        
+        if (!dbAccs || dbAccs.length === 0) {
+          const success = await syncTableToSupabase('thcs_accounts', accounts, []);
+          if (success) {
+            showToast("Hệ thống database trống. Đã đồng bộ đẩy toàn bộ danh sách tài khoản hiện tại lên Cloud!", "success");
+          } else {
+            showToast("Đồng bộ đẩy thất bại, vui lòng kiểm tra kết nối!", "error");
+          }
+          setIsSyncing(false);
+          return;
+        }
+
+        const localAccounts = [...accounts];
+        const mergedMap = new Map<string, Account>();
+
+        localAccounts.forEach(acc => {
+          mergedMap.set(acc.username.toLowerCase(), acc);
+        });
+
+        let newFromCloud = 0;
+        dbAccs.forEach(dbAcc => {
+          const uLower = dbAcc.username.toLowerCase();
+          if (!mergedMap.has(uLower)) {
+            mergedMap.set(uLower, dbAcc);
+            newFromCloud++;
+          }
+        });
+
+        const finalMergedList = Array.from(mergedMap.values());
+
+        setAccounts(finalMergedList);
+        localStorage.setItem('thcs_accounts', JSON.stringify(finalMergedList));
+
+        const syncSuccess = await syncTableToSupabase('thcs_accounts', finalMergedList, dbAccs);
+        
+        if (syncSuccess) {
+          if (newFromCloud > 0) {
+            showToast(`Đồng bộ dữ liệu thành công! Đã tích hợp thêm ${newFromCloud} tài khoản mới từ Máy chủ đám mây.`, "success");
+          } else {
+            showToast("Hệ thống tài khoản đã hoàn toàn đồng nhất với Đám mây Supabase!", "success");
+          }
+        } else {
+          showToast("Đồng bộ tải về thành công nhưng dữ liệu chưa thể đẩy lên hệ thống lưu trữ đồng nhất!", "error");
+        }
+      } catch (err: any) {
+        showToast(`Lỗi đồng bộ hóa đám mây: ${err.message || 'Mất kết nối'}`, "error");
+      } finally {
+        setIsSyncing(false);
+      }
     };
 
     const handleDownloadTemplate = () => {
@@ -279,6 +374,22 @@ export default function AdminSections({
               className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <FileSpreadsheet className="w-4 h-4" /> Cấp Đồng Loạt (Excel/CSV)
+            </button>
+            <button
+              onClick={handleExportAccounts}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Xuất toàn bộ danh sách tài khoản hiện tại ra file Excel để lưu trữ"
+            >
+              <Download className="w-4 h-4" /> Tải Danh Sách (Excel)
+            </button>
+            <button
+              onClick={handleSyncAccounts}
+              disabled={isSyncing}
+              className={`${isSyncing ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-700'} text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer`}
+              title="Đồng bộ 2 chiều: Kéo tài khoản mới từ Cloud và Đẩy dữ liệu đồng nhất lên Supabase"
+            >
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} /> 
+              {isSyncing ? 'Đang đồng bộ...' : 'Đồng Bộ Đám Mây'}
             </button>
             <button
               onClick={() => onOpenAddAccount()}
