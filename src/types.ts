@@ -119,6 +119,7 @@ export interface DocumentItem {
     name: string;
     ext: string;
     size: string;
+    content?: string;
   } | null;
 }
 

@@ -2030,22 +2030,47 @@ export default function App() {
                 const catStr = (document.getElementById('acc-doc-cat') as HTMLSelectElement)?.value as any;
                 const fileInp = (document.getElementById('acc-doc-file') as HTMLInputElement)?.files?.[0];
 
-                if (!titleStr.trim() || !fileInp) {
+                if (!titleStr || !titleStr.trim() || !fileInp) {
                   showToast("Vui lòng nhập tiêu đề văn bản và chọn tệp!", "info");
                   return;
                 }
 
-                const newD: DocumentItem = {
-                  id: Date.now(),
-                  title: titleStr.trim(),
-                  category: catStr,
-                  date: new Date().toLocaleDateString('vi-VN'),
-                  file: { name: fileInp.name, ext: 'pdf', size: '1.2 MB' }
+                if (fileInp.size > 8 * 1024 * 1024) {
+                  showToast("Dung lượng tệp quá lớn (vui lòng chọn tệp dưới 8MB)!", "error");
+                  return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const b64Data = e.target?.result as string;
+                  const sizeInKB = (fileInp.size / 1024).toFixed(1);
+                  const displaySize = fileInp.size > 1024 * 1024 
+                    ? `${(fileInp.size / (1024 * 1024)).toFixed(1)} MB` 
+                    : `${sizeInKB} KB`;
+
+                  const newD: DocumentItem = {
+                    id: Date.now(),
+                    title: titleStr.trim(),
+                    category: catStr,
+                    date: new Date().toLocaleDateString('vi-VN'),
+                    file: { 
+                      name: fileInp.name, 
+                      ext: fileInp.name.split('.').pop() || 'pdf', 
+                      size: displaySize,
+                      content: b64Data
+                    }
+                  };
+
+                  setDocuments(prev => [newD, ...prev]);
+                  setIsUploadDocOpen(false);
+                  showToast("Đăng tải thành công dữ liệu văn bản chỉ đạo mới!", "success");
                 };
 
-                setDocuments(prev => [newD, ...prev]);
-                setIsUploadDocOpen(false);
-                showToast("Đăng tải thành công dữ liệu văn bản chỉ đạo mới!", "success");
+                reader.onerror = () => {
+                  showToast("Không thể đọc tệp tin tải lên!", "error");
+                };
+
+                reader.readAsDataURL(fileInp);
               }}
               className="w-full bg-brand-orange text-white font-black py-2.5 rounded-xl cursor-pointer"
             >

@@ -29,8 +29,18 @@ export default function DocumentSection({
   });
 
   const handleDownload = (doc: DocumentItem) => {
-    triggerDownload(doc.file?.name || `${doc.title}.doc`, `Nội dung chính thức: ${doc.title}. Bản ban hành chính thức cấp ${doc.category}.`);
-    showToast(`Đã tải về tệp tin: ${doc.title.slice(0, 30)}...`, "success");
+    if (doc.file?.content) {
+      const a = document.createElement('a');
+      a.href = doc.file.content;
+      a.download = doc.file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast(`Đã tải về tệp tin: ${doc.title.slice(0, 30)}...`, "success");
+    } else {
+      triggerDownload(doc.file?.name || `${doc.title}.doc`, `Nội dung chính thức: ${doc.title}. Bản ban hành chính thức cấp ${doc.category}.`);
+      showToast(`Đã tải về tệp tin: ${doc.title.slice(0, 30)}...`, "success");
+    }
   };
 
   return (
