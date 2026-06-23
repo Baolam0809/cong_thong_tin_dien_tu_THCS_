@@ -100,8 +100,12 @@ export async function fetchTableData<T>(tableName: string, fallbackData: T[]): P
       console.warn(`[Supabase Fetch] Table: ${tableName} - Error:`, error.message);
       return fallbackData;
     }
-    if (!data) {
-      return [];
+    if (!data || data.length === 0) {
+      if (fallbackData && fallbackData.length > 0) {
+        // Automatically seed the Postgres database to make sure it's populated
+        seedTable(tableName, fallbackData);
+      }
+      return fallbackData;
     }
 
     // Return mapped fields (e.g. JSON parsed)
