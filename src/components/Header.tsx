@@ -165,7 +165,11 @@ export default function Header({
     <>
       <header 
         className="text-white shadow-xl relative overflow-hidden border-b-4 border-brand-orange bg-cover bg-center transition-all duration-500"
-        style={bannerUrl ? { backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.82), rgba(30, 58, 138, 0.9)), url(${bannerUrl})` } : undefined}
+        style={bannerUrl ? { 
+          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.82), rgba(30, 58, 138, 0.9)), url(${bannerUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        } : undefined}
       >
         {/* If no custom banner, render the gradient background */}
         {!bannerUrl && (
@@ -222,7 +226,7 @@ export default function Header({
 
           {/* RIGHT HALF: Dynamic Activity Slideshow changing every second */}
           <div className="lg:col-span-5 w-full">
-            <div className="bg-slate-950/70 backdrop-blur-md rounded-2xl p-1.5 border border-white/20 shadow-2xl overflow-hidden relative group h-[140px] md:h-[150px] flex flex-col justify-between">
+            <div className="bg-slate-950/70 backdrop-blur-md rounded-2xl p-1.5 border border-white/20 shadow-2xl overflow-hidden relative group h-[180px] sm:h-[220px] md:h-[260px] lg:h-[230px] xl:h-[260px] flex flex-col justify-between">
               {/* Slideshow window */}
               <div className="relative w-full h-full flex-1 rounded-xl overflow-hidden bg-slate-900 border border-white/10">
                 {slidesToUse.map((slide, idx) => {
@@ -252,7 +256,8 @@ export default function Header({
                         <img
                           src={media.url}
                           alt={slide.title || "Hoạt động trường"}
-                          className="w-full h-full object-cover select-none"
+                          className="w-full h-full object-cover object-center select-none"
+                          style={{ objectFit: 'cover', objectPosition: 'center' }}
                           referrerPolicy="no-referrer"
                         />
                       )}

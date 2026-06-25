@@ -464,7 +464,12 @@ export default function UINewsSection({
                   <div className="flex gap-4 items-center flex-wrap sm:flex-nowrap">
                     {bannerUrl ? (
                       <div className="w-24 h-16 bg-slate-100 rounded-xl overflow-hidden border relative group shrink-0">
-                        <img src={bannerUrl} alt="Banner nháp" className="w-full h-full object-cover" />
+                        <img 
+                          src={bannerUrl} 
+                          alt="Banner nháp" 
+                          className="w-full h-full object-cover object-center" 
+                          style={{ objectFit: 'cover', objectPosition: 'center' }} 
+                        />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
                           <Eye className="w-4 h-4 text-white" />
                         </div>
@@ -587,7 +592,11 @@ export default function UINewsSection({
               
               <div 
                 className="rounded-2xl p-6 bg-cover bg-center shadow-lg border border-slate-150 transition-all duration-300 relative overflow-hidden flex items-center text-white"
-                style={bannerUrl ? { backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.8), rgba(30, 58, 138, 0.85)), url(${bannerUrl})` } : undefined}
+                style={bannerUrl ? { 
+                  backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.8), rgba(30, 58, 138, 0.85)), url(${bannerUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                } : undefined}
               >
                 {!bannerUrl && (
                   <div className="absolute inset-0 bg-gradient-to-r from-brand-blue-dark via-brand-blue to-teal-900" />
@@ -706,7 +715,12 @@ export default function UINewsSection({
                       />
                       {newSlideSource ? (
                         <div className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 aspect-video flex items-center justify-center">
-                          <img src={newSlideSource} alt="Preview" className="w-full h-full object-cover" />
+                          <img 
+                            src={newSlideSource} 
+                            alt="Preview" 
+                            className="w-full h-full object-cover object-center" 
+                            style={{ objectFit: 'cover', objectPosition: 'center' }} 
+                          />
                           <button
                             type="button"
                             onClick={() => setNewSlideSource('')}
@@ -795,7 +809,8 @@ export default function UINewsSection({
                                 <img 
                                   src={displayThumb} 
                                   alt="Slide Thumb" 
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-cover object-center"
+                                  style={{ objectFit: 'cover', objectPosition: 'center' }}
                                   onError={(e) => {
                                     // if image fails to load (e.g. drive cors protection, give a nice thumbnail)
                                     (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=150';
