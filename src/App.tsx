@@ -134,21 +134,21 @@ export default function App() {
       {
         id: "default-1",
         type: "url",
-        source: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=800",
+        source: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=90&w=1600",
         title: "Hoạt động học tập sôi nổi của học sinh",
         createdAt: new Date().toISOString()
       },
       {
         id: "default-2",
         type: "url",
-        source: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=800",
+        source: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=90&w=1600",
         title: "Phong trào thể thao và ngoại khóa rèn luyện",
         createdAt: new Date().toISOString()
       },
       {
         id: "default-3",
         type: "url",
-        source: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
+        source: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=90&w=1600",
         title: "Ứng dụng CNTT & Chuyển đổi số giáo học",
         createdAt: new Date().toISOString()
       }
@@ -535,11 +535,16 @@ export default function App() {
 
         if (dbSettings && dbSettings.length > 0) {
           const s = dbSettings[0];
-          if (s.bannerUrl !== undefined) setBannerUrl(s.bannerUrl || '');
-          if (s.logoUrl !== undefined) setLogoUrl(s.logoUrl || '');
-          if (s.marqueeText !== undefined) setMarqueeText(s.marqueeText || '');
-          if (Array.isArray(s.bannerSlides)) {
-            setBannerSlides(s.bannerSlides);
+          const finalBannerUrl = s.bannerUrl !== undefined ? s.bannerUrl : s.bannerurl;
+          const finalLogoUrl = s.logoUrl !== undefined ? s.logoUrl : s.logourl;
+          const finalMarqueeText = s.marqueeText !== undefined ? s.marqueeText : s.marqueetext;
+          const finalBannerSlides = s.bannerSlides !== undefined ? s.bannerSlides : s.bannerslides;
+
+          if (finalBannerUrl !== undefined) setBannerUrl(finalBannerUrl || '');
+          if (finalLogoUrl !== undefined) setLogoUrl(finalLogoUrl || '');
+          if (finalMarqueeText !== undefined) setMarqueeText(finalMarqueeText || '');
+          if (Array.isArray(finalBannerSlides)) {
+            setBannerSlides(finalBannerSlides);
           }
         }
 

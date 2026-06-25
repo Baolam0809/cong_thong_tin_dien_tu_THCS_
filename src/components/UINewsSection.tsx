@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Account, Activity, BannerSlide, StudentDetail } from '../types';
 import { showToast } from './Toast';
+import { syncTableToSupabase } from '../lib/supabase';
 
 interface UINewsSectionProps {
   currentUser: Account | null;
@@ -566,13 +567,31 @@ export default function UINewsSection({
                     >
                       <RefreshCw className="w-3.5 h-3.5" /> Khôi phục mặc định
                     </button>
-                    <button
-                      onClick={() => {
+                     <button
+                      onClick={async () => {
                         localStorage.setItem('thcs_banner_url', bannerUrl || '');
                         localStorage.setItem('thcs_logo_url', logoUrl || '');
                         localStorage.setItem('thcs_marquee_text', marqueeText || '');
                         localStorage.setItem('thcs_banner_slides', JSON.stringify(bannerSlides));
-                        showToast("Đã lưu thiết lập giao diện và công khai (public) thành công lên Cổng thông tin!", "success");
+                        
+                        showToast("Đang đồng bộ thiết lập giao diện lên đám mây Supabase...", "info");
+                        try {
+                          const currentSettings = [{
+                            id: 1,
+                            bannerUrl,
+                            logoUrl,
+                            marqueeText,
+                            bannerSlides
+                          }];
+                          const success = await syncTableToSupabase('thcs_settings', currentSettings, []);
+                          if (success) {
+                            showToast("Đã đồng bộ thiết lập và công khai lên đám mây Supabase thành công!", "success");
+                          } else {
+                            showToast("Đã lưu thiết lập cục bộ! Tuy nhiên không thể đồng bộ lên Supabase (kiểm tra kết nối hoặc cấu trúc bảng).", "error");
+                          }
+                        } catch (err: any) {
+                          showToast(`Đã lưu cục bộ! Lỗi kết nối đám mây: ${err.message}`, "error");
+                        }
                       }}
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
                     >

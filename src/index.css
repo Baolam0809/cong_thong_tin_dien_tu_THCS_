@@ -5,7 +5,6 @@
 /* Global sharpness enhancement for all images */
 img {
   image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
 }
 
 @theme {

@@ -93,21 +93,21 @@ export default function Header({
     {
       id: "default-1",
       type: "url" as const,
-      source: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=80&w=800",
+      source: "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=90&w=1600",
       title: "Tiết học hứng thú và sôi nổi của các em học sinh",
       createdAt: new Date().toISOString()
     },
     {
       id: "default-2",
       type: "url" as const,
-      source: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=800",
+      source: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=90&w=1600",
       title: "Khai phá kiến thức khoa học và nỗ lực rèn luyện",
       createdAt: new Date().toISOString()
     },
     {
       id: "default-3",
       type: "url" as const,
-      source: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
+      source: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=90&w=1600",
       title: "Ứng dụng chuyển đổi số giáo dục toàn diện THCS Hòa Phú",
       createdAt: new Date().toISOString()
     }

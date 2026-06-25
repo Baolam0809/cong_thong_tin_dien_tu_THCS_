@@ -174,7 +174,7 @@ export function sanitizeRowForTable(tableName: string, row: any): any {
     thcs_homeroom_notices: ['id', 'className', 'title', 'content', 'date', 'pin'],
     thcs_schedules: ['id', 'title', 'description', 'date', 'colorType'],
     thcs_youtube_lessons: ['id', 'title', 'youtubeUrl', 'subject', 'grade', 'description', 'createdAt'],
-    thcs_settings: ['id', 'bannerUrl', 'logoUrl', 'marqueeText', 'bannerSlides']
+    thcs_settings: ['id', 'bannerUrl', 'logoUrl', 'marqueeText', 'bannerSlides', 'bannerurl', 'logourl', 'marqueetext', 'bannerslides']
   };
 
   const allowedFields = schemas[tableName];
