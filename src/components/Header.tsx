@@ -253,13 +253,27 @@ export default function Header({
                           <div className="absolute inset-0 bg-transparent" />
                         </div>
                       ) : (
-                        <img
-                          src={media.url}
-                          alt={slide.title || "Hoạt động trường"}
-                          className="w-full h-full object-cover object-center select-none"
-                          style={{ objectFit: 'cover', objectPosition: 'center' }}
-                          referrerPolicy="no-referrer"
-                        />
+                        <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-slate-950">
+                          {/* Ambient Blur Backdrop to fill container beautifully with the same photo */}
+                          <img
+                            src={media.url}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-45 select-none pointer-events-none"
+                            referrerPolicy="no-referrer"
+                          />
+                          {/* Main Image shown fully without any cropping, optimized for extreme sharpness */}
+                          <img
+                            src={media.url}
+                            alt={slide.title || "Hoạt động trường"}
+                            className="relative z-10 max-w-full max-h-full w-auto h-auto object-contain select-none transition-all duration-300 contrast-[1.03] saturate-[1.03] brightness-[1.01]"
+                            style={{ 
+                              imageRendering: '-webkit-optimize-contrast',
+                              maxHeight: '100%',
+                              maxWidth: '100%'
+                            }}
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
                       )}
 
                       {/* Text overlays are removed per request for a fully clean slide preview */}
