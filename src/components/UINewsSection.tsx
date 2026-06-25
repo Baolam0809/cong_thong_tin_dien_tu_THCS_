@@ -579,9 +579,13 @@ export default function UINewsSection({
                           const currentSettings = [{
                             id: 1,
                             bannerUrl,
+                            bannerurl: bannerUrl,
                             logoUrl,
+                            logourl: logoUrl,
                             marqueeText,
-                            bannerSlides
+                            marqueetext: marqueeText,
+                            bannerSlides,
+                            bannerslides: bannerSlides
                           }];
                           const success = await syncTableToSupabase('thcs_settings', currentSettings, []);
                           if (success) {

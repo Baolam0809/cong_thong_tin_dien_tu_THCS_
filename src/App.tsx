@@ -701,19 +701,7 @@ export default function App() {
     localStorage.setItem('thcs_logo_url', logoUrl || '');
     localStorage.setItem('thcs_marquee_text', marqueeText || '');
     localStorage.setItem('thcs_banner_slides', JSON.stringify(bannerSlides));
-
-    if (supabaseLoaded && dbStatus?.connected && !dbStatus?.tablesMissing) {
-      const currentSettings = [{
-        id: 1,
-        bannerUrl,
-        logoUrl,
-        marqueeText,
-        bannerSlides
-      }];
-      syncTableToSupabase('thcs_settings', currentSettings, prevSettingsRef.current);
-      prevSettingsRef.current = currentSettings;
-    }
-  }, [bannerUrl, logoUrl, marqueeText, bannerSlides, supabaseLoaded, dbStatus]);
+  }, [bannerUrl, logoUrl, marqueeText, bannerSlides]);
 
   useEffect(() => {
     localStorage.setItem('thcs_accounts', JSON.stringify(accounts));

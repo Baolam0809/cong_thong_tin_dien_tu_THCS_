@@ -50,6 +50,7 @@ export default function Header({
 }: HeaderProps) {
   const [clockText, setClockText] = useState('Đang đồng bộ thời gian...');
   const [slideIndex, setSlideIndex] = useState(0);
+  const [logoError, setLogoError] = useState(false);
 
   // Helper utility to extract image and video properties from different URL sources (drive, youtube, upload, base64)
   const getSlideMediaUrl = (url: string) => {
@@ -192,12 +193,13 @@ export default function Header({
           {/* LEFT HALF: Logo and typography branding display */}
           <div className="lg:col-span-7 flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl shadow-lg p-1.5 flex items-center justify-center border-2 border-brand-orange/50 transform hover:scale-105 transition-transform duration-300 overflow-hidden shrink-0">
-              {logoUrl ? (
+              {logoUrl && !logoError ? (
                 <img 
                   src={logoUrl} 
                   alt="Logo Trường" 
                   className="w-full h-full object-contain rounded-xl"
                   referrerPolicy="no-referrer"
+                  onError={() => setLogoError(true)}
                 />
               ) : (
                 <svg className="w-full h-full text-brand-blue" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -260,6 +262,9 @@ export default function Header({
                             alt=""
                             className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-45 select-none pointer-events-none"
                             referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=90&w=1600";
+                            }}
                           />
                           {/* Main Image shown fully without any cropping, optimized for extreme sharpness */}
                           <img
@@ -272,6 +277,9 @@ export default function Header({
                               maxWidth: '100%'
                             }}
                             referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&q=90&w=1600";
+                            }}
                           />
                         </div>
                       )}
