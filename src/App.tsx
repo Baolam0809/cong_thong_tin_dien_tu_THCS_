@@ -1868,7 +1868,7 @@ export default function App() {
           )}
 
           {/* 10.3 VISITOR MONITORING SECTION */}
-          {currentSection === 'visitor-logs' && (
+          {currentSection === 'visitor-logs' && currentUser?.role === 'Admin' && (
             <VisitorMonitoringSection
               currentUser={currentUser}
               visitorLogs={visitorLogs}

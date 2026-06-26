@@ -164,7 +164,7 @@ export default function Sidebar({
       id: 'visitor-logs',
       label: 'Nhật ký & Giám sát Cam',
       icon: Eye,
-      roles: ['all'],
+      roles: ['Admin'],
       color: 'text-rose-500 font-bold'
     }
   ];
