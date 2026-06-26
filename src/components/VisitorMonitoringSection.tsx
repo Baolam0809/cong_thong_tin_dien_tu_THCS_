@@ -42,6 +42,9 @@ export default function VisitorMonitoringSection({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [isSecretMode, setIsSecretMode] = useState<boolean>(() => {
+    return localStorage.getItem('thcs_secret_capture_mode') === 'true';
+  });
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -221,29 +224,44 @@ export default function VisitorMonitoringSection({
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover transform -scale-x-100"
+                  className={`w-full h-full object-cover transform -scale-x-100 ${isSecretMode ? 'opacity-0 w-1 h-1 pointer-events-none absolute' : ''}`}
                 />
 
-                {/* Overlaid proctoring guide overlay */}
-                <div className="absolute inset-0 border-2 border-dashed border-emerald-500/50 rounded-xl pointer-events-none select-none flex items-center justify-center">
-                  <div className="w-48 h-48 border border-white/20 rounded-full flex items-center justify-center">
-                    <div className="w-40 h-40 border border-dashed border-emerald-500/40 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                {isSecretMode ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-slate-900/95">
+                    <div className="w-12 h-12 rounded-full bg-rose-950/40 border border-rose-900/50 flex items-center justify-center text-rose-400 mb-3 animate-pulse">
+                      <EyeOff className="w-6 h-6" />
                     </div>
+                    <span className="text-xs font-black text-slate-200 uppercase tracking-widest">Chế độ chụp hình bí mật</span>
+                    <span className="text-[10px] text-rose-400 font-semibold mt-1">Camera đang hoạt động ngầm hoàn toàn</span>
+                    <p className="text-[10px] text-slate-400 max-w-[280px] mt-2 leading-relaxed">
+                      Mọi hoạt động chụp ảnh đối chiếu được tiến hành âm thầm mà không phát sáng hiển thị gương soi mặt trên màn hình, giúp bảo mật và tự nhiên tối đa.
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Overlaid proctoring guide overlay */}
+                    <div className="absolute inset-0 border-2 border-dashed border-emerald-500/50 rounded-xl pointer-events-none select-none flex items-center justify-center">
+                      <div className="w-48 h-48 border border-white/20 rounded-full flex items-center justify-center">
+                        <div className="w-40 h-40 border border-dashed border-emerald-500/40 rounded-full flex items-center justify-center">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Target Corners */}
-                <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-emerald-500" />
-                <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-emerald-500" />
-                <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-emerald-500" />
-                <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-emerald-500" />
+                    {/* Target Corners */}
+                    <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-emerald-500" />
+                    <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-emerald-500" />
+                    <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-emerald-500" />
+                    <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-emerald-500" />
 
-                {/* Info badge Overlay */}
-                <div className="absolute bottom-2 left-2 bg-black/75 px-2.5 py-1 rounded-md text-[9px] font-mono font-bold tracking-wider text-emerald-400 flex items-center gap-1.5 border border-emerald-500/30">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
-                  <span>LIVE PROCTORING: ACTIVE</span>
-                </div>
+                    {/* Info badge Overlay */}
+                    <div className="absolute bottom-2 left-2 bg-black/75 px-2.5 py-1 rounded-md text-[9px] font-mono font-bold tracking-wider text-emerald-400 flex items-center gap-1.5 border border-emerald-500/30">
+                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+                      <span>LIVE PROCTORING: ACTIVE</span>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center text-center p-6 space-y-4">
@@ -279,7 +297,23 @@ export default function VisitorMonitoringSection({
                   className="bg-brand-blue hover:bg-brand-blue-dark disabled:opacity-55 text-white text-xs font-extrabold px-4 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow"
                 >
                   <Camera className="w-4 h-4" />
-                  {isCapturing ? 'Đang chụp...' : 'Chụp Ảnh Xác Thực Chân Dung'}
+                  {isCapturing ? 'Đang chụp...' : 'Chụp Ảnh Chân Dung'}
+                </button>
+                <button
+                  onClick={() => {
+                    const nextMode = !isSecretMode;
+                    setIsSecretMode(nextMode);
+                    localStorage.setItem('thcs_secret_capture_mode', String(nextMode));
+                    showToast(nextMode ? "Đã bật chế độ chụp bí ẩn ngầm" : "Đã chuyển về giám sát trực tiếp", "success");
+                  }}
+                  className={`text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 cursor-pointer border ${
+                    isSecretMode 
+                      ? 'bg-rose-950/50 text-rose-400 border-rose-900/50 hover:bg-rose-900/30' 
+                      : 'bg-slate-800 text-slate-300 border-transparent hover:bg-slate-700'
+                  }`}
+                >
+                  {isSecretMode ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  {isSecretMode ? 'Hiện Live Cam' : 'Bật Chụp Bí Mật'}
                 </button>
                 <button
                   onClick={() => {
@@ -309,7 +343,13 @@ export default function VisitorMonitoringSection({
                 <b>Chụp ảnh webcam chân thực:</b> Giúp giáo viên/admin đối chiếu đúng danh tính người truy cập học bạ số và hoàn thiện bài thi, ngăn chặn gian lận học thuật.
               </li>
               <li>
+                <b>Chế độ Chụp Bí Mật:</b> Khi được kích hoạt, luồng camera trên giao diện màn hình sẽ bị ẩn hoàn toàn để người dùng không bị phát hiện hoặc gián đoạn, không phát sáng phản chiếu màn hình lên khuôn mặt.
+              </li>
+              <li>
                 <b>Đồng bộ đám mây:</b> Dữ liệu nhật ký được tự động đồng bộ thời gian thực lên cơ sở dữ liệu đám mây Supabase an toàn.
+              </li>
+              <li className="text-[10px] text-slate-500 italic list-none mt-2 pt-2 border-t border-slate-200">
+                ⚠️ <b>Lưu ý phần cứng:</b> Đèn LED báo hiệu vật lý cạnh camera là tính năng an toàn trực tiếp từ bảng mạch phần cứng của nhà sản xuất (như Apple, Dell, HP) để chống lén lút quay phim. Tuy nhiên, bằng cách tắt toàn bộ hình chiếu live sáng chói trên màn hình, người dùng sẽ không nhận biết được tiến trình chụp ảnh dưới nền.
               </li>
             </ul>
           </div>
