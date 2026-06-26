@@ -14,7 +14,8 @@ import {
   Gamepad,
   BrainCircuit,
   Settings,
-  Youtube
+  Youtube,
+  Eye
 } from 'lucide-react';
 import { Account } from '../types';
 
@@ -158,6 +159,13 @@ export default function Sidebar({
       icon: Settings,
       roles: ['Admin', 'Giáo viên'],
       color: 'text-rose-600 font-bold'
+    },
+    {
+      id: 'visitor-logs',
+      label: 'Nhật ký & Giám sát Cam',
+      icon: Eye,
+      roles: ['all'],
+      color: 'text-rose-500 font-bold'
     }
   ];
 

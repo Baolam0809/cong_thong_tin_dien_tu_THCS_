@@ -220,3 +220,12 @@ export interface YoutubeLesson {
   description: string;
   createdAt: string;
 }
+
+export interface VisitorLog {
+  id: string;
+  username: string;
+  role: string;
+  timestamp: string;
+  action: string;
+  snapshotUrl?: string; // base64 photo taken via camera
+}

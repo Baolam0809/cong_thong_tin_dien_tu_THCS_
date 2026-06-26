@@ -45,7 +45,8 @@ const ALL_TABLE_NAMES = [
   'thcs_homeroom_notices',
   'thcs_schedules',
   'thcs_youtube_lessons',
-  'thcs_settings'
+  'thcs_settings',
+  'thcs_visitor_logs'
 ];
 
 /**
@@ -174,7 +175,8 @@ export function sanitizeRowForTable(tableName: string, row: any): any {
     thcs_homeroom_notices: ['id', 'className', 'title', 'content', 'date', 'pin'],
     thcs_schedules: ['id', 'title', 'description', 'date', 'colorType'],
     thcs_youtube_lessons: ['id', 'title', 'youtubeUrl', 'subject', 'grade', 'description', 'createdAt'],
-    thcs_settings: ['id', 'bannerUrl', 'logoUrl', 'marqueeText', 'bannerSlides', 'bannerurl', 'logourl', 'marqueetext', 'bannerslides']
+    thcs_settings: ['id', 'bannerUrl', 'logoUrl', 'marqueeText', 'bannerSlides', 'bannerurl', 'logourl', 'marqueetext', 'bannerslides'],
+    thcs_visitor_logs: ['id', 'username', 'role', 'timestamp', 'action', 'snapshotUrl', 'snapshoturl']
   };
 
   const allowedFields = schemas[tableName];
@@ -503,4 +505,14 @@ CREATE TABLE IF NOT EXISTS thcs_settings (
   "logoUrl" TEXT,
   "marqueeText" TEXT,
   "bannerSlides" JSONB
+);
+
+-- 19. Bảng Lưu nhật ký truy cập & Chụp ảnh webcam
+CREATE TABLE IF NOT EXISTS thcs_visitor_logs (
+  id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  role TEXT NOT NULL,
+  timestamp TEXT NOT NULL,
+  action TEXT NOT NULL,
+  "snapshotUrl" TEXT
 );`;

@@ -50,8 +50,11 @@ import {
   StudentConduct,
   HomeroomNotice,
   YoutubeLesson,
-  UpcomingSchedule
+  UpcomingSchedule,
+  VisitorLog
 } from './types';
+
+import VisitorMonitoringSection from './components/VisitorMonitoringSection';
 
 import {
   initialAccounts,
@@ -292,6 +295,11 @@ export default function App() {
     ];
   });
 
+  const [visitorLogs, setVisitorLogs] = useState<VisitorLog[]>(() => {
+    const saved = localStorage.getItem('thcs_visitor_logs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   // Local React Toasts
   const [toasts, setToasts] = useState<{ id: number; message: string; type: 'info' | 'success' | 'error' }[]>([]);
 
@@ -339,15 +347,6 @@ export default function App() {
   // ==========================================
   useEffect(() => {
     async function loadAllFromSupabase() {
-      const status = await checkDatabaseStatus();
-      setDbStatus(status);
-
-      if (!status.connected || status.tablesMissing) {
-        console.warn("[Supabase] Cannot establish full connection or tables do not exist yet. Using offline LocalStorage.");
-        setSupabaseLoaded(true);
-        return;
-      }
-
       // Retrieve latest local storage values to serve as high-fidelity fallbacks to prevent any data loss
       let localAccounts = initialAccounts;
       let localClasses = initialClasses;
@@ -367,6 +366,7 @@ export default function App() {
       let localActivities = initialActivities;
       let localOutstandingStudents = initialOutstandingStudents;
       let localOutstandingClasses = initialOutstandingClasses;
+      let localVisitorLogs: VisitorLog[] = [];
       let localConducts: any[] = [];
       let localNotices = [
         {
@@ -451,6 +451,8 @@ export default function App() {
         const sHomn = localStorage.getItem('thcs_homeroom_notices'); if (sHomn) localNotices = JSON.parse(sHomn);
         const sYout = localStorage.getItem('thcs_youtube_lessons'); if (sYout) localLessons = JSON.parse(sYout);
         
+        const sLogs = localStorage.getItem('thcs_visitor_logs'); if (sLogs) localVisitorLogs = JSON.parse(sLogs);
+        
         const bUrl = localStorage.getItem('thcs_banner_url') || '';
         const lUrl = localStorage.getItem('thcs_logo_url') || '';
         const mTxt = localStorage.getItem('thcs_marquee_text') || '🚀 Chào mừng quý thầy cô, các bậc phụ huynh và các em học sinh đến với Cổng thông tin điện tử Trường THCS Hòa Phú! Chuyển đổi số học vụ nâng cao hiệu suất dạy và học!';
@@ -465,6 +467,45 @@ export default function App() {
         }];
       } catch (e) {
         console.warn("Failed to parse some local storage values, fallback defaults will be used", e);
+      }
+
+      // Apply local storage values instantly as initial state
+      setAccounts(localAccounts);
+      setClasses(localClasses);
+      setAssignments(localAssignments);
+      setCourseRegistrations(localCourseRegistrations);
+      setSurveys(localSurveys);
+      setExams(localExams);
+      setHomework(localHomework);
+      setSubmissions(localSubmissions);
+      setDocuments(localDocuments);
+      setNotifications(localNotifications);
+      setActivities(localActivities);
+      setOutstandingStudents(localOutstandingStudents);
+      setOutstandingClasses(localOutstandingClasses);
+      setConducts(localConducts);
+      setNotices(localNotices);
+      setLessons(localLessons);
+      setSchedules(localSchedules);
+      if (localVisitorLogs && localVisitorLogs.length > 0) {
+        setVisitorLogs(localVisitorLogs);
+      }
+      if (localSettings && localSettings.length > 0) {
+        const s = localSettings[0];
+        if (s.bannerUrl !== undefined) setBannerUrl(s.bannerUrl || '');
+        if (s.logoUrl !== undefined) setLogoUrl(s.logoUrl || '');
+        if (s.marqueeText !== undefined) setMarqueeText(s.marqueeText || '');
+        if (Array.isArray(s.bannerSlides)) setBannerSlides(s.bannerSlides);
+      }
+
+      // Query database status
+      const status = await checkDatabaseStatus();
+      setDbStatus(status);
+
+      if (!status.connected || status.tablesMissing) {
+        console.warn("[Supabase] Cannot establish full connection or tables do not exist yet. Using offline LocalStorage.");
+        setSupabaseLoaded(true);
+        return;
       }
 
       try {
@@ -486,7 +527,8 @@ export default function App() {
           dbNotices,
           dbLessons,
           dbSchedules,
-          dbSettings
+          dbSettings,
+          dbVisitorLogs
         ] = await Promise.all([
           fetchTableData<Account>('thcs_accounts', localAccounts),
           fetchTableData<Class>('thcs_classes', localClasses),
@@ -505,7 +547,8 @@ export default function App() {
           fetchTableData<HomeroomNotice>('thcs_homeroom_notices', localNotices),
           fetchTableData<YoutubeLesson>('thcs_youtube_lessons', localLessons),
           fetchTableData<UpcomingSchedule>('thcs_schedules', localSchedules),
-          fetchTableData<any>('thcs_settings', localSettings)
+          fetchTableData<any>('thcs_settings', localSettings),
+          fetchTableData<VisitorLog>('thcs_visitor_logs', localVisitorLogs)
         ]);
 
         // Sync local states
@@ -532,6 +575,7 @@ export default function App() {
         setNotices(dbNotices);
         setLessons(dbLessons);
         setSchedules(dbSchedules);
+        setVisitorLogs(dbVisitorLogs || []);
 
         if (dbSettings && dbSettings.length > 0) {
           const s = dbSettings[0];
@@ -897,6 +941,7 @@ export default function App() {
     setCurrentUser(matched);
     setIsLoginOpen(false);
     showToast(`Đăng nhập thành công! Chào mừng ${matched.role === 'Admin' ? 'Quản trị bản' : matched.name} đã kết nối.`, "success");
+    addVisitorLog(`Đăng nhập thành công vào hệ thống học vụ số với vai trò ${matched.role}`);
   };
 
   const handleExecuteRegister = (name: string, user: string, pass: string, role: string, extra: string) => {
@@ -949,20 +994,120 @@ export default function App() {
   };
 
   // Navigations routing
+  const sectionLabels: Record<string, string> = {
+    'overview': 'Trang chủ tổng quan',
+    'course-registration': 'Khóa học của con',
+    'documents': 'Văn bản chỉ đạo',
+    'youtube-learning': 'Góc tự học (Video)',
+    'accounts': 'Quản lý tài khoản',
+    'classes': 'Khối & Lớp học',
+    'subjects': 'Bộ môn & Phân công',
+    'exams': 'Ngân hàng đề thi',
+    'homework': 'Quản lý bài tập',
+    'upcoming-schedules': 'Quản lý Lịch sắp tới',
+    'student-test': 'Phòng thi (Làm bài)',
+    'grading': 'Chấm bài & Nhập điểm',
+    'reports': 'Bảng điểm tổng hợp',
+    'contact-book': 'Sổ liên lạc gia đình',
+    'export-center': 'Trung tâm kết xuất',
+    'game-center': 'Trò chơi trí tuệ',
+    'teacher-workspace': 'Nhiệm vụ GV (CN/BM)',
+    'ui-news-management': 'Giao diện & Đăng tin',
+    'visitor-logs': 'Nhật ký & Giám sát Cam'
+  };
+
   const navigateToSection = (sec: string) => {
     setViewingClassId(null);
     setViewingStudentId(null);
     setCurrentSection(sec);
+    const label = sectionLabels[sec] || sec;
+    addVisitorLog(`Truy cập phân hệ: ${label}`);
   };
 
   const handleViewClassDetail = (id: string) => {
     setViewingClassId(id);
     setCurrentSection('class-detail');
+    addVisitorLog(`Xem chi tiết lớp học: Chi đội ${id}`);
   };
 
   const handleViewStudentDetail = (id: number) => {
     setViewingStudentId(id);
     setCurrentSection('student-detail');
+    const stud = outstandingStudents.find(s => s.id === id);
+    addVisitorLog(`Xem học bạ điện tử học sinh: ${stud ? stud.name : `Mã học sinh #${id}`}`);
+  };
+
+  const addVisitorLog = async (actionText: string) => {
+    const isName = currentUser ? currentUser.name : "Khách ẩn danh";
+    const isRole = currentUser ? currentUser.role : "Khách vãng lai";
+    let snapshotUrl: string | undefined = undefined;
+
+    try {
+      const activeVideo = document.querySelector('video') as HTMLVideoElement | null;
+      if (activeVideo && activeVideo.srcObject) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 320;
+        canvas.height = 240;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+          ctx.drawImage(activeVideo, 0, 0, 320, 240);
+          snapshotUrl = canvas.toDataURL('image/jpeg', 0.7);
+        }
+      } else {
+        if (navigator.permissions && (navigator.permissions as any).query) {
+          const status = await navigator.permissions.query({ name: 'camera' as any });
+          if (status.state === 'granted') {
+            const tempStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+            const tempVideo = document.createElement('video');
+            tempVideo.srcObject = tempStream;
+            tempVideo.setAttribute('playsinline', 'true');
+            await new Promise((resolve) => {
+              tempVideo.onloadedmetadata = () => {
+                tempVideo.play().then(resolve).catch(resolve);
+              };
+            });
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 240;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(tempVideo, 0, 0, 320, 240);
+              snapshotUrl = canvas.toDataURL('image/jpeg', 0.75);
+            }
+            tempStream.getTracks().forEach(track => track.stop());
+          }
+        }
+      }
+    } catch (err) {
+      console.log("Webcam snap omitted or blocked:", err);
+    }
+
+    const newLog: VisitorLog = {
+      id: `vl-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      username: isName,
+      role: isRole,
+      timestamp: new Date().toLocaleString('vi-VN'),
+      action: actionText,
+      snapshotUrl: snapshotUrl
+    };
+
+    setVisitorLogs(prev => {
+      const updated = [newLog, ...prev].slice(0, 500);
+      localStorage.setItem('thcs_visitor_logs', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (supabaseLoaded && dbStatus?.connected && !dbStatus?.tablesMissing) {
+      try {
+        await syncTableToSupabase('thcs_visitor_logs', [newLog], []);
+      } catch (err) {
+        console.warn("Could not sync visitor log to Supabase:", err);
+      }
+    }
   };
 
   const handleLikeActivity = (id: number) => {
@@ -1283,6 +1428,7 @@ export default function App() {
           setIsChangePasswordOpen(true);
         }}
         onLogout={() => {
+          addVisitorLog("Đăng xuất khỏi hệ thống an toàn");
           setCurrentUser(null);
           setCurrentSection('overview');
           showToast("Đã đăng xuất tài khoản an toàn!", "info");
@@ -1718,6 +1864,17 @@ export default function App() {
               currentUser={currentUser}
               lessons={lessons}
               setLessons={setLessons}
+            />
+          )}
+
+          {/* 10.3 VISITOR MONITORING SECTION */}
+          {currentSection === 'visitor-logs' && (
+            <VisitorMonitoringSection
+              currentUser={currentUser}
+              visitorLogs={visitorLogs}
+              setVisitorLogs={setVisitorLogs}
+              dbConnected={dbStatus?.connected === true}
+              onAddLog={addVisitorLog}
             />
           )}
 
