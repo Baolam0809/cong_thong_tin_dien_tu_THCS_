@@ -31,11 +31,55 @@ export default function YoutubeLearningSection({
 
   const isAdminOrTeacher = currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Giáo viên');
 
-  // Helper to extract Youtube Video ID
+  // Helper to extract Youtube Video ID (Highly robust for shorts, live, standard watch, share, and plain IDs)
   const getYoutubeId = (url: string): string | null => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    if (!url) return null;
+    const trimmed = url.trim();
+    
+    // If it's already an 11-character alphanumeric string, return it directly
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+      return trimmed;
+    }
+
+    try {
+      // 1. Handle YouTube Shorts
+      if (trimmed.includes('/shorts/')) {
+        const parts = trimmed.split('/shorts/');
+        if (parts[1]) {
+          const id = parts[1].split(/[?&#]/)[0];
+          if (id.length === 11) return id;
+        }
+      }
+
+      // 2. Handle YouTube Live
+      if (trimmed.includes('/live/')) {
+        const parts = trimmed.split('/live/');
+        if (parts[1]) {
+          const id = parts[1].split(/[?&#]/)[0];
+          if (id.length === 11) return id;
+        }
+      }
+
+      // 3. Handle standard video links & shared/embed links
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = trimmed.match(regExp);
+      if (match && match[2] && match[2].length === 11) {
+        return match[2];
+      }
+
+      // 4. Handle URL parameters fallback
+      if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
+        const urlObj = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
+        const vParam = urlObj.searchParams.get('v');
+        if (vParam && vParam.length === 11) {
+          return vParam;
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing YouTube URL:", e);
+    }
+    
+    return null;
   };
 
   const handleOpenModal = (lesson: YoutubeLesson | null = null) => {
@@ -123,9 +167,11 @@ export default function YoutubeLearningSection({
   };
 
   // Filter lessons
-  const filteredLessons = lessons.filter(l => {
-    const matchesSearch = l.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          l.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const lessonsList = Array.isArray(lessons) ? lessons : [];
+
+  const filteredLessons = lessonsList.filter(l => {
+    const matchesSearch = (l.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (l.description || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSubject = selectedSubject === 'all' || l.subject === selectedSubject;
     const matchesGrade = selectedGrade === 'all' || l.grade === selectedGrade;
     return matchesSearch && matchesSubject && matchesGrade;
@@ -369,11 +415,33 @@ export default function YoutubeLearningSection({
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                  placeholder="Ví dụ: https://www.youtube.com/watch?v=dQw4w9WgXcQ hoặc dQw4w9WgXcQ"
                   value={formUrl}
                   onChange={(e) => setFormUrl(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 bg-slate-50 focus:bg-white rounded-xl text-xs font-semibold focus:outline-none focus:border-red-500 transition"
                 />
+                {formUrl.trim() && (
+                  <div className="mt-2 bg-slate-50 border border-slate-200 rounded-xl p-2.5">
+                    {getYoutubeId(formUrl) ? (
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={`https://img.youtube.com/vi/${getYoutubeId(formUrl)}/hqdefault.jpg`}
+                          alt="Video Preview"
+                          className="w-20 h-12 object-cover rounded-lg border border-slate-200 bg-black shrink-0"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="text-[10px] text-emerald-600 font-bold flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping shrink-0" />
+                          Liên kết hợp lệ! Nhận dạng thành công.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-rose-500 font-bold flex items-center gap-1">
+                        ⚠️ Chưa nhận dạng được đường dẫn YouTube hợp lệ (Shorts, Live, Watch...).
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -384,7 +452,7 @@ export default function YoutubeLearningSection({
                   <select
                     value={formSubject}
                     onChange={(e) => setFormSubject(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-xl text-xs font-bold focus:outline-none text-slate-705"
+                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-xl text-xs font-bold focus:outline-none text-slate-700"
                   >
                     {subjects.map(sub => (
                       <option key={sub} value={sub}>{sub}</option>
@@ -399,7 +467,7 @@ export default function YoutubeLearningSection({
                   <select
                     value={formGrade}
                     onChange={(e) => setFormGrade(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-xl text-xs font-bold focus:outline-none text-slate-705"
+                    className="w-full px-3 py-2 border border-slate-200 bg-slate-50 rounded-xl text-xs font-bold focus:outline-none text-slate-700"
                   >
                     {grades.map(g => (
                       <option key={g} value={g}>{g}</option>
