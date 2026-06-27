@@ -1042,50 +1042,6 @@ export default function App() {
     const isRole = currentUser ? currentUser.role : "Khách vãng lai";
     let snapshotUrl: string | undefined = undefined;
 
-    try {
-      const activeVideo = document.querySelector('video') as HTMLVideoElement | null;
-      if (activeVideo && activeVideo.srcObject) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 320;
-        canvas.height = 240;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.translate(canvas.width, 0);
-          ctx.scale(-1, 1);
-          ctx.drawImage(activeVideo, 0, 0, 320, 240);
-          snapshotUrl = canvas.toDataURL('image/jpeg', 0.7);
-        }
-      } else {
-        if (navigator.permissions && (navigator.permissions as any).query) {
-          const status = await navigator.permissions.query({ name: 'camera' as any });
-          if (status.state === 'granted') {
-            const tempStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
-            const tempVideo = document.createElement('video');
-            tempVideo.srcObject = tempStream;
-            tempVideo.setAttribute('playsinline', 'true');
-            await new Promise((resolve) => {
-              tempVideo.onloadedmetadata = () => {
-                tempVideo.play().then(resolve).catch(resolve);
-              };
-            });
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = 320;
-            canvas.height = 240;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(tempVideo, 0, 0, 320, 240);
-              snapshotUrl = canvas.toDataURL('image/jpeg', 0.75);
-            }
-            tempStream.getTracks().forEach(track => track.stop());
-          }
-        }
-      }
-    } catch (err) {
-      console.log("Webcam snap omitted or blocked:", err);
-    }
-
     const newLog: VisitorLog = {
       id: `vl-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       username: isName,
