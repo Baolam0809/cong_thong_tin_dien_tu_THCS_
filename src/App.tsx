@@ -2641,39 +2641,7 @@ export default function App() {
         onCommentAdd={handleAddComment}
       />
 
-      {/* ==========================================
-          SUPABASE LIVE STATUS WIDGET & MODAL
-          ========================================== */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-        {/* Floating status badge */}
-        <button
-          onClick={() => setIsDbDiagOpen(true)}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-2xl border font-bold text-xs select-none transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer text-white ${
-            !dbStatus?.connected
-              ? 'bg-rose-600 border-rose-500 animate-pulse'
-              : dbStatus?.tablesMissing
-              ? 'bg-amber-500 border-amber-400'
-              : 'bg-indigo-600 border-indigo-500 hover:bg-indigo-700'
-          }`}
-        >
-          <Database className="w-4 h-4 animate-bounce" />
-          <span>
-            {!dbStatus?.connected
-              ? 'Phát hiện lỗi Supabase'
-              : dbStatus?.tablesMissing
-              ? 'DB Chưa tạo bảng'
-              : 'Supabase Cloud: Đồng bộ'}
-          </span>
-          <span className="relative flex h-2 w-2">
-            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-              !dbStatus?.connected ? 'bg-rose-200' : dbStatus?.tablesMissing ? 'bg-amber-100' : 'bg-emerald-300'
-            }`}></span>
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${
-              !dbStatus?.connected ? 'bg-rose-400' : dbStatus?.tablesMissing ? 'bg-amber-300' : 'bg-emerald-400'
-            }`}></span>
-          </span>
-        </button>
-      </div>
+
 
       {/* Supabase connection detail Modal */}
       {isDbDiagOpen && (
