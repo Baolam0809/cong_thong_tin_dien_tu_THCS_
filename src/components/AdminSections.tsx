@@ -1178,7 +1178,6 @@ export default function AdminSections({
                 </th>
                 <th className="p-3">Tên đăng nhập (Username)</th>
                 <th className="p-3">Vai trò chức vụ</th>
-                <th className="p-3 text-center">Phân Quyền Thao Tác (Thêm/Sửa/Xóa/H.tác)</th>
                 <th className="p-3">Thông tin đính danh (Phân Công Giảng Dạy / Lớp / Ghi chú)</th>
                 <th className="p-3 text-right">Lựa chọn</th>
               </tr>
@@ -1221,87 +1220,6 @@ export default function AdminSections({
                     }`}>
                       {acc.role}
                     </span>
-                  </td>
-                  <td className="p-3 text-center">
-                    {acc.role === 'Admin' ? (
-                      <span className="bg-rose-50 text-rose-700 text-[9px] font-extrabold border border-rose-200 px-2 py-0.5 rounded-lg select-none">
-                        ★ Toàn Quyền Quản Trị
-                      </span>
-                    ) : (
-                      <div className="flex items-center justify-center gap-1">
-                        {/* canAdd Toggle */}
-                        <button
-                          onClick={() => {
-                            if (currentUser?.role === 'Admin') {
-                              handleTogglePermission(acc.id, 'canAdd');
-                            }
-                          }}
-                          disabled={currentUser?.role !== 'Admin'}
-                          className={`px-2 py-0.5 rounded text-[9px] font-black border transition ${
-                            acc.canAdd
-                              ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600 cursor-pointer'
-                              : 'bg-slate-50 text-slate-400 border-slate-250 hover:bg-slate-100 disabled:hover:bg-slate-50'
-                          }`}
-                          title={currentUser?.role === 'Admin' ? "Click để cấp/gỡ quyền Thêm mới" : "Quyền thêm mới"}
-                        >
-                          + Thêm
-                        </button>
-
-                        {/* canEdit Toggle */}
-                        <button
-                          onClick={() => {
-                            if (currentUser?.role === 'Admin') {
-                              handleTogglePermission(acc.id, 'canEdit');
-                            }
-                          }}
-                          disabled={currentUser?.role !== 'Admin'}
-                          className={`px-2 py-0.5 rounded text-[9px] font-black border transition ${
-                            acc.canEdit
-                              ? 'bg-sky-500 text-white border-sky-500 hover:bg-sky-600 cursor-pointer'
-                              : 'bg-slate-50 text-slate-400 border-slate-250 hover:bg-slate-100 disabled:hover:bg-slate-50'
-                          }`}
-                          title={currentUser?.role === 'Admin' ? "Click để cấp/gỡ quyền Chỉnh sửa" : "Quyền chỉnh sửa"}
-                        >
-                          ✎ Sửa
-                        </button>
-
-                        {/* canDelete Toggle */}
-                        <button
-                          onClick={() => {
-                            if (currentUser?.role === 'Admin') {
-                              handleTogglePermission(acc.id, 'canDelete');
-                            }
-                          }}
-                          disabled={currentUser?.role !== 'Admin'}
-                          className={`px-2 py-0.5 rounded text-[9px] font-black border transition ${
-                            acc.canDelete
-                              ? 'bg-rose-500 text-white border-rose-500 hover:bg-rose-600 cursor-pointer'
-                              : 'bg-slate-50 text-slate-400 border-slate-250 hover:bg-slate-100 disabled:hover:bg-slate-50'
-                          }`}
-                          title={currentUser?.role === 'Admin' ? "Click để cấp/gỡ quyền Xóa bỏ" : "Quyền xóa bỏ"}
-                        >
-                          ✖ Xóa
-                        </button>
-
-                        {/* canUndo Toggle */}
-                        <button
-                          onClick={() => {
-                            if (currentUser?.role === 'Admin') {
-                              handleTogglePermission(acc.id, 'canUndo');
-                            }
-                          }}
-                          disabled={currentUser?.role !== 'Admin'}
-                          className={`px-2 py-0.5 rounded text-[9px] font-black border transition ${
-                            acc.canUndo
-                              ? 'bg-purple-500 text-white border-purple-500 hover:bg-purple-600 cursor-pointer'
-                              : 'bg-slate-50 text-slate-400 border-slate-250 hover:bg-slate-100 disabled:hover:bg-slate-50'
-                          }`}
-                          title={currentUser?.role === 'Admin' ? "Click để cấp/gỡ quyền Hoàn tác" : "Quyền hoàn tác"}
-                        >
-                          ⟲ H.tác
-                        </button>
-                      </div>
-                    )}
                   </td>
                   <td className="p-3 text-slate-550 font-bold text-[11px]">{acc.extra || '-'}</td>
                   <td className="p-3 text-right">
