@@ -1,12 +1,15 @@
 import React from 'react';
 import { Calendar, Heart, MessageSquare, PlusCircle, Bookmark, Star, ArrowRight, UserCheck, School } from 'lucide-react';
-import { Activity, StudentDetail, ClassDetail, Account } from '../types';
+import { Activity, StudentDetail, ClassDetail, Account, Class, Submission } from '../types';
 
 interface OverviewSectionProps {
   currentUser: Account | null;
   activities: Activity[];
   outstandingClasses: ClassDetail[];
   outstandingStudents: StudentDetail[];
+  classes: Class[];
+  accounts: Account[];
+  submissions: Submission[];
   onOpenCreateActivity: () => void;
   onViewClassDetail: (id: string) => void;
   onViewStudentDetail: (id: number) => void;
@@ -19,6 +22,9 @@ export default function OverviewSection({
   activities,
   outstandingClasses,
   outstandingStudents,
+  classes = [],
+  accounts = [],
+  submissions = [],
   onOpenCreateActivity,
   onViewClassDetail,
   onViewStudentDetail,
@@ -26,6 +32,16 @@ export default function OverviewSection({
   onLikeActivity,
 }: OverviewSectionProps) {
   const canPublish = currentUser && (currentUser.role === 'Admin' || (currentUser.role === 'Giáo viên' && currentUser.canPostNews));
+
+  // Dynamically calculate system stats
+  const totalStudents = classes.reduce((sum, c) => sum + (c.total || 0), 0);
+  const totalStaff = accounts.filter(a => a.role === 'Admin' || a.role === 'Giáo viên' || a.role === 'Nhân viên').length;
+  const totalClassesCount = classes.length;
+  
+  // Calculate digital profile / synchronized report ratio
+  const totalSub = submissions.length;
+  const syncedCount = submissions.filter(s => s.isSynced || s.grade !== null).length;
+  const syncPercentage = totalSub > 0 ? Math.round((syncedCount / totalSub) * 100) : 100;
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
@@ -49,19 +65,19 @@ export default function OverviewSection({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
           <span className="text-slate-400 text-[9.5px] font-bold uppercase tracking-wider block">Học sinh toàn trường</span>
-          <span className="text-xl font-black text-brand-blue mt-1 block">820 em</span>
+          <span className="text-xl font-black text-brand-blue mt-1 block">{totalStudents.toLocaleString()} em</span>
         </div>
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
           <span className="text-slate-400 text-[9.5px] font-bold uppercase tracking-wider block">Hội đồng Sư phạm</span>
-          <span className="text-xl font-black text-brand-orange mt-1 block">48 thầy cô</span>
+          <span className="text-xl font-black text-brand-orange mt-1 block">{totalStaff} thầy cô</span>
         </div>
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
           <span className="text-slate-400 text-[9.5px] font-bold uppercase tracking-wider block">Lớp học chuẩn quốc gia</span>
-          <span className="text-xl font-black text-emerald-600 mt-1 block">16 lớp</span>
+          <span className="text-xl font-black text-emerald-600 mt-1 block">{totalClassesCount} lớp</span>
         </div>
         <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
           <span className="text-slate-400 text-[9.5px] font-bold uppercase tracking-wider block">Hồ sơ Học bạ số</span>
-          <span className="text-xl font-black text-indigo-650 mt-1 block">100% tỷ lệ</span>
+          <span className="text-xl font-black text-indigo-650 mt-1 block">{syncPercentage}% tỷ lệ</span>
         </div>
       </div>
 

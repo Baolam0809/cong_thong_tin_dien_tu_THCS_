@@ -247,6 +247,14 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [currentSemester, setCurrentSemester] = useState<string>(() => {
+    return localStorage.getItem('thcs_current_semester') || 'Học kỳ II';
+  });
+
+  const [academicYear, setAcademicYear] = useState<string>(() => {
+    return localStorage.getItem('thcs_academic_year') || '2025 - 2026';
+  });
+
   const [notices, setNotices] = useState<HomeroomNotice[]>(() => {
     const saved = localStorage.getItem('thcs_homeroom_notices');
     if (saved) return JSON.parse(saved);
@@ -1573,6 +1581,20 @@ export default function App() {
         bannerSlides={bannerSlides}
         currentSection={currentSection}
         onSelectSection={navigateToSection}
+        currentSemester={currentSemester}
+        academicYear={academicYear}
+        onUpdateSemester={(sem) => {
+          setCurrentSemester(sem);
+          localStorage.setItem('thcs_current_semester', sem);
+          showToast(`Đã chuyển sang ${sem} thành công!`, 'success');
+          addVisitorLog(`Chuyển hệ thống sang ${sem}`);
+        }}
+        onUpdateAcademicYear={(year) => {
+          setAcademicYear(year);
+          localStorage.setItem('thcs_academic_year', year);
+          showToast(`Đã chuyển sang Năm học ${year} thành công!`, 'success');
+          addVisitorLog(`Chuyển hệ thống sang Năm học ${year}`);
+        }}
       />
 
       {/* LAYOUT BODY GRID */}
@@ -1597,6 +1619,9 @@ export default function App() {
                 activities={activities}
                 outstandingClasses={outstandingClasses}
                 outstandingStudents={outstandingStudents}
+                classes={classes}
+                accounts={accounts}
+                submissions={submissions}
                 onOpenCreateActivity={() => setIsAddHomeworkOpen(true)} // Or map specifically
                 onViewClassDetail={handleViewClassDetail}
                 onViewStudentDetail={handleViewStudentDetail}
