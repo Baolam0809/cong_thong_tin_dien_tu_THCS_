@@ -212,16 +212,7 @@ export default function AdminSections({
             showToast("Hệ thống tài khoản đã hoàn toàn đồng nhất với Đám mây Supabase!", "success");
           }
         } else {
-          showToast("Đồng bộ tải về thành công nhưng dữ liệu chưa thể đẩy lên hệ thống lưu trữ đồng nhất!", "error");
-        }
-      } catch (err: any) {
-        showToast(`Lỗi đồng bộ hóa đám mây: ${err.message || 'Mất kết nối'}`, "error");
-      } finally {
-        setIsSyncing(false);
-      }
-    };
-
-    const handleDownloadTemplate = () => {
+          showToast("�    const handleDownloadTemplate = () => {
       try {
         const templateData = [
           {
@@ -265,6 +256,58 @@ export default function AdminSections({
       }
     };
 
+    const handleDownloadStudentTemplate = () => {
+      try {
+        const templateData = [
+          {
+            "STT": 1,
+            "Mã định danh": "030095123456",
+            "CCCD": "030095012345",
+            "Họ tên": "Trần Đức Nam",
+            "Năm sinh": "2012",
+            "Lớp": "8A",
+            "Nơi ở": "Ấp 1, Xã Hòa Phú, Củ Chi, TP.HCM",
+            "Cha mẹ": "Trần Văn Hùng",
+            "Số điện thoại": "0987654321",
+            "Mật khẩu (Tùy chọn)": "123456"
+          },
+          {
+            "STT": 2,
+            "Mã định danh": "030095123457",
+            "CCCD": "",
+            "Họ tên": "Nguyễn Thị Mai",
+            "Năm sinh": "2012",
+            "Lớp": "8A",
+            "Nơi ở": "Ấp 3, Xã Hòa Phú, Củ Chi, TP.HCM",
+            "Cha mẹ": "Nguyễn Thị Hoa",
+            "Số điện thoại": "0912345678",
+            "Mật khẩu (Tùy chọn)": "123"
+          }
+        ];
+
+        const ws = XLSX.utils.json_to_sheet(templateData);
+        ws['!cols'] = [
+          { wch: 6 },
+          { wch: 18 },
+          { wch: 18 },
+          { wch: 22 },
+          { wch: 12 },
+          { wch: 10 },
+          { wch: 35 },
+          { wch: 22 },
+          { wch: 15 },
+          { wch: 20 }
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "DanhSachHocSinh");
+        XLSX.writeFile(wb, "Bieu_mau_cap_tai_khoan_Hoc_Sinh_Thcs_Hoa_Phu.xlsx");
+        showToast("Tải biểu mẫu Excel cấp tài khoản Học sinh thành công!", "success");
+      } catch (err: any) {
+        showToast(`Không thể tạo file biểu mẫu học sinh: ${err.message}`, "error");
+      }
+    };
+
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -286,37 +329,91 @@ export default function AdminSections({
           const parsedList: any[] = [];
           
           rawRows.forEach((row: any) => {
-            const name = (row["Họ và Tên Nhân Sự"] || row["Họ tên"] || row["name"] || Object.values(row)[0] || "").toString().trim();
-            const username = (row["Tài khoản đăng nhập"] || row["Tài khoản"] || row["username"] || Object.values(row)[1] || "").toString().trim().toLowerCase();
-            const password = (row["Mật khẩu ban hành"] || row["Mật khẩu"] || row["password"] || Object.values(row)[2] || "123").toString().trim();
-            const roleRaw = (row["Vai trò chức vụ"] || row["Phân vai"] || row["role"] || Object.values(row)[3] || "Học sinh").toString().trim();
-            const extra = (row["Thông tin đính kèm"] || row["Thông tin đính danh"] || row["extra"] || Object.values(row)[4] || "").toString().trim();
+            const keys = Object.keys(row);
+            const isStudentTemplate = keys.includes("Mã định danh") || keys.includes("Họ tên") || keys.includes("Lớp") || keys.includes("Cha mẹ");
 
-            if (!name || !username) {
-              return;
-            }
+            if (isStudentTemplate) {
+              const name = (row["Họ tên"] || row["Họ và tên"] || "").toString().trim();
+              const studentId = (row["Mã định danh"] || "").toString().trim();
+              const cccd = (row["CCCD"] || row["cccd"] || "").toString().trim();
+              const dob = (row["Năm sinh"] || "").toString().trim();
+              const classVal = (row["Lớp"] || "").toString().trim();
+              const address = (row["Nơi ở"] || "").toString().trim();
+              const parents = (row["Cha mẹ"] || "").toString().trim();
+              const phone = (row["Số điện thoại"] || row["SĐT"] || "").toString().trim();
+              
+              if (!name) return;
 
-            let role: 'Admin' | 'Giáo viên' | 'Học sinh' | 'Phụ huynh' = 'Học sinh';
-            const rLower = roleRaw.toLowerCase();
-            if (rLower.includes("quản trị") || rLower.includes("admin")) {
-              role = "Admin";
-            } else if (rLower.includes("giáo viên") || rLower.includes("giaovien") || rLower.includes("teacher") || rLower === "gv") {
-              role = "Giáo viên";
-            } else if (rLower.includes("phụ huynh") || rLower.includes("phuhuynh") || rLower.includes("parent") || rLower === "ph") {
-              role = "Phụ huynh";
+              let username = "";
+              if (studentId) {
+                username = studentId.toLowerCase().replace(/[^a-z0-9]/g, '');
+              } else {
+                const cleanName = name
+                  .normalize("NFD")
+                  .replace(/[\u0300-\u036f]/g, "")
+                  .toLowerCase()
+                  .replace(/đ/g, "d")
+                  .replace(/[^a-z0-9 ]/g, "")
+                  .trim()
+                  .split(/\s+/)
+                  .map((word, i, arr) => (i === arr.length - 1 ? word : word[0]))
+                  .join("");
+                username = cleanName + "_" + Math.floor(100 + Math.random() * 900);
+              }
+
+              const password = (row["Mật khẩu (Tùy chọn)"] || row["Mật khẩu"] || "123").toString().trim();
+
+              parsedList.push({
+                name,
+                username,
+                password,
+                role: "Học sinh",
+                extra: `Lớp: ${classVal} | PH: ${parents}`,
+                studentId,
+                cccd,
+                dob,
+                class: classVal,
+                address,
+                parents,
+                phone,
+                isFirstLogin: false,
+                canPostNews: false
+              });
             } else {
-              role = "Học sinh";
-            }
+              const name = (row["Họ và Tên Nhân Sự"] || row["Họ tên"] || row["name"] || Object.values(row)[0] || "").toString().trim();
+              const username = (row["Tài khoản đăng nhập"] || row["Tài khoản"] || row["username"] || Object.values(row)[1] || "").toString().trim().toLowerCase();
+              const password = (row["Mật khẩu ban hành"] || row["Mật khẩu"] || row["password"] || Object.values(row)[2] || "123").toString().trim();
+              const roleRaw = (row["Vai trò chức vụ"] || row["Phân vai"] || row["role"] || Object.values(row)[3] || "Học sinh").toString().trim();
+              const extra = (row["Thông tin đính kèm"] || row["Thông tin đính danh"] || row["extra"] || Object.values(row)[4] || "").toString().trim();
 
-            parsedList.push({
-              name,
-              username,
-              password,
-              role,
-              extra,
-              isFirstLogin: false,
-              canPostNews: role === "Admin" || role === "Giáo viên"
-            });
+              if (!name || !username) {
+                return;
+              }
+
+              let role: 'Admin' | 'Giáo viên' | 'Nhân viên' | 'Học sinh' | 'Phụ huynh' = 'Học sinh';
+              const rLower = roleRaw.toLowerCase();
+              if (rLower.includes("quản trị") || rLower.includes("admin")) {
+                role = "Admin";
+              } else if (rLower.includes("giáo viên") || rLower.includes("giaovien") || rLower.includes("teacher") || rLower === "gv") {
+                role = "Giáo viên";
+              } else if (rLower.includes("nhân viên") || rLower.includes("nhanvien") || rLower.includes("staff")) {
+                role = "Nhân viên";
+              } else if (rLower.includes("phụ huynh") || rLower.includes("phuhuynh") || rLower.includes("parent") || rLower === "ph") {
+                role = "Phụ huynh";
+              } else {
+                role = "Học sinh";
+              }
+
+              parsedList.push({
+                name,
+                username,
+                password,
+                role,
+                extra,
+                isFirstLogin: false,
+                canPostNews: role === "Admin" || role === "Giáo viên"
+              });
+            }
           });
 
           if (parsedList.length === 0) {
@@ -357,6 +454,32 @@ export default function AdminSections({
           id: Date.now() + index,
           name: imp.name,
           username: uniqueUsername,
+          password: imp.password,
+          role: imp.role,
+          extra: imp.extra,
+          isFirstLogin: false,
+          canPostNews: imp.canPostNews,
+          studentId: imp.studentId,
+          cccd: imp.cccd,
+          dob: imp.dob,
+          class: imp.class,
+          address: imp.address,
+          parents: imp.parents,
+          phone: imp.phone
+        });
+        existingUsernames.add(uniqueUsername);
+      });
+
+      setAccounts(prev => [...finalToImport, ...prev]);
+      
+      let warnMsg = duplicateCount > 0 
+        ? ` (Đã bổ sung mã số để tránh trùng lặp cho ${duplicateCount} tài khoản)`
+        : "";
+      showToast(`Chúc mừng! Cấp mới đồng loạt thành công ${finalToImport.length} tài khoản học vụ!${warnMsg}`, "success");
+      
+      setImportedAccounts([]);
+      setShowBulk(false);
+    };ername: uniqueUsername,
           password: imp.password,
           role: imp.role,
           extra: imp.extra,

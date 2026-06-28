@@ -1109,13 +1109,54 @@ export default function App() {
   // ==========================================
   // DIALOG CRUD INTERFACES SAVES
   // ==========================================
-  const handleSaveAccount = (id: number | null, name: string, user: string, pass: string, role: any, extra: string) => {
+  const handleSaveAccount = (
+    id: number | null, 
+    name: string, 
+    user: string, 
+    pass: string, 
+    role: any, 
+    extra: string,
+    studentId?: string,
+    cccd?: string,
+    dob?: string,
+    classVal?: string,
+    address?: string,
+    parents?: string,
+    phone?: string
+  ) => {
     if (id) {
       setAccounts(prev =>
-        prev.map(a => a.id === id ? { ...a, name, password: pass, role, extra } : a)
+        prev.map(a => a.id === id ? { 
+          ...a, 
+          name, 
+          password: pass, 
+          role, 
+          extra,
+          studentId: role === 'Học sinh' ? studentId : undefined,
+          cccd: role === 'Học sinh' ? cccd : undefined,
+          dob: role === 'Học sinh' ? dob : undefined,
+          class: role === 'Học sinh' ? classVal : undefined,
+          address: role === 'Học sinh' ? address : undefined,
+          parents: role === 'Học sinh' ? parents : undefined,
+          phone: role === 'Học sinh' ? phone : undefined
+        } : a)
       );
       if (currentUser && currentUser.id === id) {
-        setCurrentUser(prev => prev ? { ...prev, name, username: user.toLowerCase(), password: pass, role, extra } : prev);
+        setCurrentUser(prev => prev ? { 
+          ...prev, 
+          name, 
+          username: user.toLowerCase(), 
+          password: pass, 
+          role, 
+          extra,
+          studentId: role === 'Học sinh' ? studentId : undefined,
+          cccd: role === 'Học sinh' ? cccd : undefined,
+          dob: role === 'Học sinh' ? dob : undefined,
+          class: role === 'Học sinh' ? classVal : undefined,
+          address: role === 'Học sinh' ? address : undefined,
+          parents: role === 'Học sinh' ? parents : undefined,
+          phone: role === 'Học sinh' ? phone : undefined
+        } : prev);
       }
       showToast("Đã cập nhật hồ sơ chuyên vụ tài khoản thành công!", "success");
     } else {
@@ -1131,7 +1172,14 @@ export default function App() {
         role,
         extra,
         isFirstLogin: false,
-        canPostNews: false
+        canPostNews: false,
+        studentId: role === 'Học sinh' ? studentId : undefined,
+        cccd: role === 'Học sinh' ? cccd : undefined,
+        dob: role === 'Học sinh' ? dob : undefined,
+        class: role === 'Học sinh' ? classVal : undefined,
+        address: role === 'Học sinh' ? address : undefined,
+        parents: role === 'Học sinh' ? parents : undefined,
+        phone: role === 'Học sinh' ? phone : undefined
       };
       setAccounts(prev => [...prev, newA]);
       showToast("Cấp thành công tài khoản số hóa chuyên quản của trường!", "success");

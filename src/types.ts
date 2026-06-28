@@ -7,6 +7,13 @@ export interface Account {
   extra: string;
   isFirstLogin?: boolean;
   canPostNews?: boolean;
+  studentId?: string; // Mã định danh
+  cccd?: string; // CCCD
+  dob?: string; // Năm sinh
+  class?: string; // Lớp
+  address?: string; // Nơi ở
+  parents?: string; // Cha mẹ
+  phone?: string; // Số điện thoại
 }
 
 export interface Class {

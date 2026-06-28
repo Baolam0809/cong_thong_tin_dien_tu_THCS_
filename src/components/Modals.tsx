@@ -616,7 +616,21 @@ interface AddAccountModalProps {
   isOpen: boolean;
   editingAccount: Account | null;
   onClose: () => void;
-  onSave: (id: number | null, name: string, user: string, pass: string, role: any, extra: string) => void;
+  onSave: (
+    id: number | null,
+    name: string,
+    user: string,
+    pass: string,
+    role: any,
+    extra: string,
+    studentId?: string,
+    cccd?: string,
+    dob?: string,
+    classVal?: string,
+    address?: string,
+    parents?: string,
+    phone?: string
+  ) => void;
 }
 export function AddAccountModal({ isOpen, editingAccount, onClose, onSave }: AddAccountModalProps) {
   const [name, setName] = useState('');
@@ -625,6 +639,15 @@ export function AddAccountModal({ isOpen, editingAccount, onClose, onSave }: Add
   const [role, setRole] = useState<'Admin' | 'Giáo viên' | 'Nhân viên' | 'Học sinh' | 'Phụ huynh'>('Học sinh');
   const [extra, setExtra] = useState('');
 
+  // Student specific states
+  const [studentId, setStudentId] = useState('');
+  const [cccd, setCccd] = useState('');
+  const [dob, setDob] = useState('');
+  const [classVal, setClassVal] = useState('');
+  const [address, setAddress] = useState('');
+  const [parents, setParents] = useState('');
+  const [phone, setPhone] = useState('');
+
   useEffect(() => {
     if (editingAccount) {
       setName(editingAccount.name);
@@ -632,12 +655,26 @@ export function AddAccountModal({ isOpen, editingAccount, onClose, onSave }: Add
       setPassword(editingAccount.password);
       setRole(editingAccount.role);
       setExtra(editingAccount.extra || '');
+      setStudentId(editingAccount.studentId || '');
+      setCccd(editingAccount.cccd || '');
+      setDob(editingAccount.dob || '');
+      setClassVal(editingAccount.class || '');
+      setAddress(editingAccount.address || '');
+      setParents(editingAccount.parents || '');
+      setPhone(editingAccount.phone || '');
     } else {
       setName('');
       setUsername('');
       setPassword('123');
       setRole('Học sinh');
       setExtra('');
+      setStudentId('');
+      setCccd('');
+      setDob('');
+      setClassVal('');
+      setAddress('');
+      setParents('');
+      setPhone('');
     }
   }, [editingAccount, isOpen]);
 
@@ -649,16 +686,31 @@ export function AddAccountModal({ isOpen, editingAccount, onClose, onSave }: Add
       showToast("Vui lòng nhập họ tên và tài khoản đăng nhập!", "info");
       return;
     }
-    onSave(editingAccount ? editingAccount.id : null, name.trim(), username.trim(), password, role, extra.trim());
+    const finalExtra = role === 'Học sinh' && classVal ? `Lớp: ${classVal} | PH: ${parents}` : extra;
+    onSave(
+      editingAccount ? editingAccount.id : null,
+      name.trim(),
+      username.trim(),
+      password,
+      role,
+      finalExtra.trim(),
+      studentId.trim(),
+      cccd.trim(),
+      dob.trim(),
+      classVal.trim(),
+      address.trim(),
+      parents.trim(),
+      phone.trim()
+    );
   };
 
   return (
-    <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 p-4 transition-all duration-300">
-      <div className="bg-white rounded-3xl shadow-xl max-w-sm w-full p-6 animate-fade-in">
+    <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 p-4 transition-all duration-300 overflow-y-auto">
+      <div className={`bg-white rounded-3xl shadow-xl w-full p-6 animate-fade-in my-8 transition-all ${role === 'Học sinh' ? 'max-w-xl' : 'max-w-sm'}`}>
         <div className="flex justify-between border-b pb-3 mb-4">
           <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
             <Users2 className="w-5 h-5 text-brand-blue" />
-            {editingAccount ? "Chỉnh sửa Tài Khoản Nhân Sự" : "Cấp Mới Tài Khoản Độc Quyền"}
+            {editingAccount ? "Chỉnh sửa Hồ Sơ Tài Khoản" : "Cấp Mới Tài Khoản Độc Quyền"}
           </h4>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-655 cursor-pointer">
             <X className="w-5 h-5" />
@@ -666,66 +718,160 @@ export function AddAccountModal({ isOpen, editingAccount, onClose, onSave }: Add
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5 text-xs font-bold">
-          <div>
-            <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Họ và Tên Nhân Sự</label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-extrabold"
-              required
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Họ và Tên Học Sinh / Nhân Sự *</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-extrabold"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Tài khoản đăng nhập *</label>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-extrabold"
+                disabled={!!editingAccount}
+                required
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Tài khoản đăng nhập</label>
-            <input
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-extrabold"
-              disabled={!!editingAccount}
-              required
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Mật khẩu ban hành *</label>
+              <input
+                type="text"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-bold"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Phân phai vai trò</label>
+              <select
+                value={role}
+                onChange={e => setRole(e.target.value as any)}
+                className="w-full text-xs p-2.5 border rounded-xl bg-white cursor-pointer font-extrabold"
+              >
+                <option value="Học sinh">Học sinh tự kết nối</option>
+                <option value="Giáo viên">Giáo viên trực lớp bộ môn</option>
+                <option value="Nhân viên">Nhân viên Văn phòng / Khác</option>
+                <option value="Khách">Khách vãng lai / Độc giả</option>
+                <option value="Phụ huynh">Phụ huynh học sinh</option>
+                <option value="Admin">Hội đồng Quản trị Admin</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Mật khẩu ban hành</label>
-            <input
-              type="text"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-bold"
-              required
-            />
-          </div>
+          {/* Conditional Student-Specific Fields */}
+          {role === 'Học sinh' ? (
+            <div className="border-t border-dashed border-slate-200 pt-3 mt-3 space-y-3.5">
+              <span className="block text-[10px] font-black text-indigo-700 uppercase tracking-wider">Thông Tin Định Danh Học Sinh Chuẩn Quốc Gia</span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Mã định danh học sinh</label>
+                  <input
+                    type="text"
+                    value={studentId}
+                    onChange={e => setStudentId(e.target.value)}
+                    placeholder="Ví dụ: 030095123456"
+                    className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-mono"
+                  />
+                </div>
 
-          <div>
-            <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Phân phai vai trò</label>
-            <select
-              value={role}
-              onChange={e => setRole(e.target.value as any)}
-              className="w-full text-xs p-2.5 border rounded-xl bg-white cursor-pointer font-extrabold"
-            >
-              <option value="Học sinh">Học sinh tự kết nối</option>
-              <option value="Giáo viên">Giáo viên trực lớp bộ môn</option>
-              <option value="Nhân viên">Nhân viên Văn phòng / Khác</option>
-              <option value="Khách">Khách vãng lai / Độc giả</option>
-              <option value="Phụ huynh">Phụ huynh học sinh</option>
-              <option value="Admin">Hội đồng Quản trị Admin</option>
-            </select>
-          </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">CCCD (Nếu có)</label>
+                  <input
+                    type="text"
+                    value={cccd}
+                    onChange={e => setCccd(e.target.value)}
+                    placeholder="CCCD học sinh"
+                    className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-mono"
+                  />
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Thông tin thêm (Lớp / SĐT / Tổ Bộ Môn)</label>
-            <input
-              type="text"
-              value={extra}
-              onChange={e => setExtra(e.target.value)}
-              placeholder="Ví dụ: Tổ Toán, Lớp 9A"
-              className="w-full text-xs p-2.5 border rounded-xl bg-slate-50"
-            />
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Năm sinh</label>
+                  <input
+                    type="text"
+                    value={dob}
+                    onChange={e => setDob(e.target.value)}
+                    placeholder="Ví dụ: 2012"
+                    className="w-full text-xs p-2.5 border rounded-xl bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Chi đội Lớp học</label>
+                  <input
+                    type="text"
+                    value={classVal}
+                    onChange={e => setClassVal(e.target.value)}
+                    placeholder="Ví dụ: 8A"
+                    className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-extrabold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Họ tên Cha/Mẹ (Người giám hộ)</label>
+                  <input
+                    type="text"
+                    value={parents}
+                    onChange={e => setParents(e.target.value)}
+                    placeholder="Họ tên phụ huynh"
+                    className="w-full text-xs p-2.5 border rounded-xl bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Số điện thoại liên hệ</label>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    placeholder="Số điện thoại di động"
+                    className="w-full text-xs p-2.5 border rounded-xl bg-slate-50 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase">Nơi ở hiện nay / Hộ khẩu thường trú</label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  placeholder="Địa chỉ chi tiết cư trú"
+                  className="w-full text-xs p-2.5 border rounded-xl bg-slate-50"
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-500 mb-1 uppercase">Thông tin thêm (Lớp / SĐT / Tổ Bộ Môn)</label>
+              <input
+                type="text"
+                value={extra}
+                onChange={e => setExtra(e.target.value)}
+                placeholder="Ví dụ: Tổ Toán, Lớp 9A"
+                className="w-full text-xs p-2.5 border rounded-xl bg-slate-50"
+              />
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-2 border-t">
             <button type="button" onClick={onClose} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition">
