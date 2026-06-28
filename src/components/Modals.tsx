@@ -618,7 +618,7 @@ export function AddAccountModal({ isOpen, editingAccount, onClose, onSave }: Add
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('123');
-  const [role, setRole] = useState<'Admin' | 'Giáo viên' | 'Học sinh' | 'Phụ huynh'>('Học sinh');
+  const [role, setRole] = useState<'Admin' | 'Giáo viên' | 'Nhân viên' | 'Học sinh' | 'Phụ huynh'>('Học sinh');
   const [extra, setExtra] = useState('');
 
   useEffect(() => {
@@ -705,6 +705,7 @@ export function AddAccountModal({ isOpen, editingAccount, onClose, onSave }: Add
             >
               <option value="Học sinh">Học sinh tự kết nối</option>
               <option value="Giáo viên">Giáo viên trực lớp bộ môn</option>
+              <option value="Nhân viên">Nhân viên Văn phòng / Khác</option>
               <option value="Phụ huynh">Phụ huynh học sinh</option>
               <option value="Admin">Hội đồng Quản trị Admin</option>
             </select>

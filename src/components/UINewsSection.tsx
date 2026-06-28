@@ -913,8 +913,10 @@ export default function UINewsSection({
                       <td className="px-6 py-3">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-black shadow-sm ${
                           acc.role === 'Admin' ? 'bg-indigo-100 text-indigo-700' :
+                          acc.role === 'Nhân viên' ? 'bg-purple-100 text-purple-700' :
                           acc.role === 'Giáo viên' ? 'bg-sky-100 text-sky-700' :
-                          acc.role === 'Học sinh' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                          acc.role === 'Học sinh' ? 'bg-emerald-100 text-emerald-700' :
+                          acc.role === 'Phụ huynh' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
                         }`}>
                           {acc.role}
                         </span>

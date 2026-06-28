@@ -571,12 +571,12 @@ export default function AdminSections({
             onClick={() => setAccountsTabFilter('staff')}
             className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               accountsTabFilter === 'staff'
-                ? 'bg-white text-rose-700 shadow-sm border border-rose-200'
+                ? 'bg-white text-rose-700 shadow-sm border border-rose-200 font-extrabold'
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
             }`}
             title="Tài khoản của Cán bộ / Nhân viên / Quản trị viên"
           >
-            Cán bộ & Nhân viên ({accounts.filter(a => a.role === 'Admin').length})
+            Cán bộ & Nhân viên ({accounts.filter(a => a.role === 'Admin' || a.role === 'Nhân viên').length})
           </button>
           <button
             onClick={() => setAccountsTabFilter('others')}
@@ -604,7 +604,7 @@ export default function AdminSections({
             <tbody className="divide-y divide-slate-100 font-medium">
               {accounts.filter(acc => {
                 if (accountsTabFilter === 'teachers') return acc.role === 'Giáo viên';
-                if (accountsTabFilter === 'staff') return acc.role === 'Admin';
+                if (accountsTabFilter === 'staff') return acc.role === 'Admin' || acc.role === 'Nhân viên';
                 if (accountsTabFilter === 'others') return acc.role === 'Học sinh' || acc.role === 'Phụ huynh';
                 return true;
               }).map(acc => (
@@ -621,6 +621,7 @@ export default function AdminSections({
                   <td className="p-3">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                       acc.role === 'Admin' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                      acc.role === 'Nhân viên' ? 'bg-purple-50 text-purple-800 border-purple-200' :
                       acc.role === 'Giáo viên' ? 'bg-teal-50 text-teal-800 border-teal-200' :
                       acc.role === 'Phụ huynh' ? 'bg-orange-50 text-brand-orange border-orange-200' :
                       'bg-emerald-50 text-emerald-800 border-emerald-200'

@@ -480,6 +480,7 @@ export default function VisitorMonitoringSection({
                           <b className="text-xs text-slate-800">{log.username}</b>
                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
                             log.role === 'Admin' ? 'bg-red-50 text-red-600 border border-red-100' :
+                            log.role === 'Nhân viên' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
                             log.role === 'Giáo viên' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
                             log.role === 'Học sinh' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                             log.role === 'Phụ huynh' ? 'bg-pink-50 text-pink-600 border border-pink-100' :
