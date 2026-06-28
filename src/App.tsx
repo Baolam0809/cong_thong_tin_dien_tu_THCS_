@@ -1225,6 +1225,129 @@ export default function App() {
     setIsAddAssignmentOpen(false);
   };
 
+  const handleSyncAccountsWithAssignments = () => {
+    let count = 0;
+    setAccounts(prevAccounts => {
+      const updatedAccounts = prevAccounts.map(acc => {
+        if (acc.role !== 'Giáo viên') return acc;
+        
+        const asg = assignments.find(a => a.teacherId === acc.id || a.teacherName.toLowerCase() === acc.name.toLowerCase());
+        let newExtra = acc.extra;
+        
+        if (!asg) {
+          if (acc.extra && acc.extra.startsWith('Dạy:')) {
+            newExtra = 'Chưa phân công bộ môn';
+          }
+        } else {
+          if (asg.subjectClassPairs && asg.subjectClassPairs.length > 0) {
+            const groups: { [subject: string]: string[] } = {};
+            asg.subjectClassPairs.forEach(pair => {
+              const lastSpaceIdx = pair.lastIndexOf(' ');
+              if (lastSpaceIdx !== -1) {
+                const sub = pair.substring(0, lastSpaceIdx).trim();
+                const cls = pair.substring(lastSpaceIdx + 1).trim();
+                if (!groups[sub]) groups[sub] = [];
+                if (!groups[sub].includes(cls)) groups[sub].push(cls);
+              } else {
+                if (!groups[pair]) groups[pair] = [];
+              }
+            });
+            const formattedList = Object.entries(groups).map(([sub, classesList]) => {
+              if (classesList.length > 0) {
+                classesList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+                return `${sub} (${classesList.join(', ')})`;
+              }
+              return sub;
+            });
+            newExtra = `Dạy: ${formattedList.join('; ')}`;
+          } else if (asg.subjects && asg.subjects.length > 0 && asg.classes && asg.classes.length > 0) {
+            const sortedClasses = [...asg.classes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            newExtra = `Dạy: ${asg.subjects.join(', ')} (${sortedClasses.join(', ')})`;
+          } else if (asg.subjects && asg.subjects.length > 0) {
+            newExtra = `Dạy: ${asg.subjects.join(', ')}`;
+          } else {
+            newExtra = 'Chưa phân công bộ môn';
+          }
+        }
+
+        if (newExtra !== acc.extra) {
+          count++;
+          return { ...acc, extra: newExtra };
+        }
+        return acc;
+      });
+
+      if (count > 0) {
+        localStorage.setItem('thcs_accounts', JSON.stringify(updatedAccounts));
+        showToast(`Đồng bộ thành công! Đã cập nhật thông tin đính danh của ${count} giáo viên giảng dạy.`, 'success');
+        return updatedAccounts;
+      } else {
+        showToast('Tất cả tài khoản giáo viên đã hoàn toàn đồng nhất với phân công hiện tại!', 'info');
+        return prevAccounts;
+      }
+    });
+  };
+
+  useEffect(() => {
+    setAccounts(prevAccounts => {
+      let count = 0;
+      const updatedAccounts = prevAccounts.map(acc => {
+        if (acc.role !== 'Giáo viên') return acc;
+        
+        const asg = assignments.find(a => a.teacherId === acc.id || a.teacherName.toLowerCase() === acc.name.toLowerCase());
+        let newExtra = acc.extra;
+        
+        if (!asg) {
+          if (acc.extra && acc.extra.startsWith('Dạy:')) {
+            newExtra = 'Chưa phân công bộ môn';
+          }
+        } else {
+          if (asg.subjectClassPairs && asg.subjectClassPairs.length > 0) {
+            const groups: { [subject: string]: string[] } = {};
+            asg.subjectClassPairs.forEach(pair => {
+              const lastSpaceIdx = pair.lastIndexOf(' ');
+              if (lastSpaceIdx !== -1) {
+                const sub = pair.substring(0, lastSpaceIdx).trim();
+                const cls = pair.substring(lastSpaceIdx + 1).trim();
+                if (!groups[sub]) groups[sub] = [];
+                if (!groups[sub].includes(cls)) groups[sub].push(cls);
+              } else {
+                if (!groups[pair]) groups[pair] = [];
+              }
+            });
+            const formattedList = Object.entries(groups).map(([sub, classesList]) => {
+              if (classesList.length > 0) {
+                classesList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+                return `${sub} (${classesList.join(', ')})`;
+              }
+              return sub;
+            });
+            newExtra = `Dạy: ${formattedList.join('; ')}`;
+          } else if (asg.subjects && asg.subjects.length > 0 && asg.classes && asg.classes.length > 0) {
+            const sortedClasses = [...asg.classes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            newExtra = `Dạy: ${asg.subjects.join(', ')} (${sortedClasses.join(', ')})`;
+          } else if (asg.subjects && asg.subjects.length > 0) {
+            newExtra = `Dạy: ${asg.subjects.join(', ')}`;
+          } else {
+            newExtra = 'Chưa phân công bộ môn';
+          }
+        }
+
+        if (newExtra !== acc.extra) {
+          count++;
+          return { ...acc, extra: newExtra };
+        }
+        return acc;
+      });
+
+      if (count > 0) {
+        localStorage.setItem('thcs_accounts', JSON.stringify(updatedAccounts));
+        return updatedAccounts;
+      }
+      return prevAccounts;
+    });
+  }, [assignments]);
+
   const handleSaveExam = (sub: string, type: string, correct: string, mcqMax: number, essayMax: number, essayQ: string, targetType: any, targetVal: string, file: any) => {
     const ex: Exam = {
       id: Date.now(),
@@ -1529,6 +1652,7 @@ export default function App() {
                 setIsAddHomeworkOpen(true);
               }}
               onOpenPermissionModal={() => setIsPermissionOpen(true)}
+              onSyncAccountsWithAssignments={handleSyncAccountsWithAssignments}
             />
           )}
 

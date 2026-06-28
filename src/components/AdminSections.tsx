@@ -52,6 +52,7 @@ interface AdminSectionsProps {
   onOpenAddExam: () => void;
   onOpenAddHomework: (hw?: Homework) => void;
   onOpenPermissionModal: () => void;
+  onSyncAccountsWithAssignments: () => void;
 }
 
 export default function AdminSections({
@@ -75,6 +76,7 @@ export default function AdminSections({
   onOpenAddExam,
   onOpenAddHomework,
   onOpenPermissionModal,
+  onSyncAccountsWithAssignments,
 }: AdminSectionsProps) {
   
   // Assignments history for undo
@@ -390,6 +392,13 @@ export default function AdminSections({
             >
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} /> 
               {isSyncing ? 'Đang đồng bộ...' : 'Đồng Bộ Đám Mây'}
+            </button>
+            <button
+              onClick={onSyncAccountsWithAssignments}
+              className="bg-teal-600 hover:bg-teal-700 text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Đồng bộ thông tin bộ môn giảng dạy từ phân công vào thông tin đính danh của tài khoản giáo viên"
+            >
+              <RefreshCw className="w-4 h-4 animate-pulse" /> Đồng bộ với Phân công
             </button>
             <button
               onClick={() => onOpenAddAccount()}
@@ -708,6 +717,13 @@ export default function AdminSections({
                 <Undo2 className="w-3.5 h-3.5" /> Hoàn tác
               </button>
             )}
+            <button
+              onClick={onSyncAccountsWithAssignments}
+              className="bg-teal-600 hover:bg-teal-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-bold shadow cursor-pointer flex items-center gap-1"
+              title="Đồng bộ thông tin bộ môn giảng dạy từ phân công vào thông tin đính danh của tài khoản giáo viên"
+            >
+              <RefreshCw className="w-3.5 h-3.5 animate-pulse" /> Đồng bộ Tài Khoản
+            </button>
             <button
               onClick={() => onOpenAddAssignment()}
               className="bg-brand-blue hover:bg-brand-blue-dark text-white text-xs px-3.5 py-1.5 rounded-lg font-bold shadow cursor-pointer flex items-center gap-1"
