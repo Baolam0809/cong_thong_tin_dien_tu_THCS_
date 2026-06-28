@@ -685,126 +685,6 @@ export default function SurveySection({
         </div>
       )}
 
-      {/* 3. SUB-SECTION: ADMIN/TEACHER SUBJECTS/THEMES MANAGEMENT PANEL */}
-      {isUserEducatorOrAdmin && (
-        <div className="mb-4 border border-indigo-150 rounded-xl bg-slate-50/70 p-3.5 text-left text-xs">
-          <div className="flex justify-between items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <Settings className="w-4.5 h-4.5 text-indigo-500 animate-spin" />
-              <span className="font-extrabold text-indigo-900 block uppercase tracking-wide">
-                Bảng quản lý danh mục chủ đề khảo sát ({availableTopics.length})
-              </span>
-            </div>
-            
-            <div className="flex gap-2">
-              {topicsHistory.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleUndoTopicAction}
-                  className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] shadow transition flex items-center gap-1 cursor-pointer"
-                  title="Hoàn tác chỉnh sửa, thêm, xóa chủ đề"
-                >
-                  <RotateCcw className="w-3 h-3" /> Hoàn tác chủ đề ({topicsHistory.length})
-                </button>
-              )}
-              
-              <button
-                type="button"
-                onClick={() => setShowTopicManager(!showTopicManager)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] shadow transition cursor-pointer"
-              >
-                {showTopicManager ? 'Ẩn bộ quản lý ✕' : 'Mở rộng biên tập chủ đề ⚙️'}
-              </button>
-            </div>
-          </div>
-
-          {showTopicManager && (
-            <div className="mt-3.5 pt-3 border-t border-indigo-100 space-y-3">
-              {/* Quick info */}
-              <p className="text-[11px] text-slate-500 italic leading-relaxed">
-                Các Giáo viên và Admin có thẩm quyền bổ sung, sửa đổi hoặc xóa bớt các chủ đề khảo sát hiển thị ở mẫu trực tuyến. Tất cả các thao tác đều được hỗ trợ bộ nhớ đệm phục hồi "Hoàn tác" ở trên.
-              </p>
-
-              {/* Grid lists */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-25 md:pb-0">
-                {/* List categories with edits */}
-                <div className="space-y-1.5 max-h-48 overflow-y-auto border border-slate-200 rounded-xl p-2 bg-white">
-                  {availableTopics.map((topic, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded-lg group">
-                      {editingTopicIndex === idx ? (
-                        <div className="flex items-center gap-1.5 w-full">
-                          <input
-                            type="text"
-                            value={editingTopicValue}
-                            onChange={e => setEditingTopicValue(e.target.value)}
-                            className="text-xs bg-slate-50 border p-1 rounded font-bold text-slate-800 flex-1"
-                          />
-                          <button
-                            onClick={() => handleSaveEditTopic(idx)}
-                            className="p-1 text-emerald-600 hover:bg-emerald-100 rounded cursor-pointer"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setEditingTopicIndex(null)}
-                            className="p-1 text-slate-400 hover:bg-slate-100 rounded cursor-pointer"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <span className="font-semibold text-slate-700 tracking-tight text-[11px] truncate max-w-[220px]">
-                            {idx + 1}. {topic}
-                          </span>
-                          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => handleStartEditTopic(idx)}
-                              className="p-1 text-slate-500 hover:text-indigo-650 hover:bg-slate-100 rounded cursor-pointer"
-                              title="Sửa tên chủ đề"
-                            >
-                              <Edit3 className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTopic(idx)}
-                              className="p-1 text-slate-500 hover:text-rose-650 hover:bg-rose-50 rounded cursor-pointer"
-                              title="Xóa chủ đề này"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Form quick add */}
-                <div className="border border-slate-200 rounded-xl p-2.5 bg-indigo-50/30 flex flex-col justify-between">
-                  <div>
-                    <label className="block text-[10px] font-bold text-indigo-950 mb-1">Thêm chủ đề khảo sát mới</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Vấn đề xe đưa đón học sinh..."
-                      value={newTopicInput}
-                      onChange={e => setNewTopicInput(e.target.value)}
-                      className="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 font-medium text-slate-800 focus:outline-indigo-500 focus:ring-1 focus:ring-indigo-400"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAddTopic}
-                    className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-1.5 rounded-lg text-[10.5px] transition flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Thêm vào cơ sở dữ liệu
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* 4. ONLINE SURVEY FORM TAB */}
       {activeTab === 'online' && (
         <form onSubmit={handleOnlineSubmit} className="space-y-4 text-left animate-fade-in pb-10">
@@ -851,11 +731,26 @@ export default function SurveySection({
 
           {/* CHECKBOX FEATURES & MULTI_RATING TOPICS */}
           <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
-            <div className="flex items-center gap-1">
-              <Award className="w-4.5 h-4.5 text-brand-orange" />
-              <label className="block text-xs font-extrabold text-indigo-950 uppercase">
-                Tích chọn và đánh giá các chủ đề chất lượng (Đồng thời nhiều chủ đề) *
-              </label>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <Award className="w-4.5 h-4.5 text-brand-orange" />
+                <label className="block text-xs font-extrabold text-indigo-950 uppercase">
+                  Tích chọn và đánh giá các chủ đề chất lượng (Đồng thời nhiều chủ đề) *
+                </label>
+              </div>
+              
+              {/* Inline Undo Button for Available Topics */}
+              {isUserEducatorOrAdmin && topicsHistory.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleUndoTopicAction}
+                  className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold border border-indigo-200 px-2.5 py-1 rounded-lg text-[10px] shadow-sm transition flex items-center gap-1 cursor-pointer animate-fade-in"
+                  title="Hoàn tác thay đổi danh sách chủ đề"
+                >
+                  <RotateCcw className="w-3 h-3 text-indigo-600 animate-spin-reverse-once" />
+                  Hoàn tác chủ đề ({topicsHistory.length})
+                </button>
+              )}
             </div>
             <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
               Quý phụ huynh vui lòng tích chọn vào ô vuông trước mỗi chủ đề và click số sao tương ứng (1-5★) để đánh giá đồng bộ cùng lúc nhiều chỉ tiêu học vụ của trường.
@@ -866,29 +761,96 @@ export default function SurveySection({
                 const isSelected = topicItem in selectedTopics;
                 const starRating = selectedTopics[topicItem] || 0;
                 
+                if (editingTopicIndex === index) {
+                  return (
+                    <div 
+                      key={index} 
+                      className="p-3.5 rounded-xl border border-indigo-400 bg-white shadow-sm flex flex-col justify-between gap-3 text-left animate-fade-in min-h-[110px]"
+                    >
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black text-indigo-800 uppercase block tracking-wider">Chỉnh sửa chủ đề {index + 1}</span>
+                        <input
+                          type="text"
+                          value={editingTopicValue}
+                          onChange={e => setEditingTopicValue(e.target.value)}
+                          className="w-full text-xs bg-slate-50 border border-slate-200 p-2 rounded-lg font-bold text-slate-800 focus:outline-indigo-500"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-1.5 pt-1.5 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => handleSaveEditTopic(index)}
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-extrabold flex items-center gap-1 cursor-pointer shadow-sm"
+                        >
+                          <Check className="w-3 h-3" /> Lưu
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingTopicIndex(null)}
+                          className="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[10px] font-extrabold flex items-center gap-1 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" /> Hủy
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div 
                     key={index} 
-                    className={`p-3 rounded-xl border transition-all duration-300 flex flex-col justify-between gap-2 text-left bg-white ${
+                    className={`p-3 rounded-xl border transition-all duration-300 flex flex-col justify-between gap-2 text-left bg-white relative group ${
                       isSelected 
                         ? 'border-brand-orange ring-1 ring-brand-orange/20 shadow-sm' 
-                        : 'border-slate-200 opacity-70 hover:opacity-100'
+                        : 'border-slate-200 opacity-80 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-start gap-2.5">
-                      <input
-                        type="checkbox"
-                        id={`online-topic-${index}`}
-                        checked={isSelected}
-                        onChange={() => handleToggleTopicSelection(topicItem)}
-                        className="mt-0.5 rounded text-brand-orange focus:ring-brand-orange cursor-pointer h-4 w-4 shrink-0"
-                      />
-                      <label 
-                        htmlFor={`online-topic-${index}`}
-                        className="text-xs font-bold text-slate-700 leading-tight cursor-pointer select-none"
-                      >
-                        {topicItem}
-                      </label>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2.5 flex-1">
+                        <input
+                          type="checkbox"
+                          id={`online-topic-${index}`}
+                          checked={isSelected}
+                          onChange={() => handleToggleTopicSelection(topicItem)}
+                          className="mt-0.5 rounded text-brand-orange focus:ring-brand-orange cursor-pointer h-4 w-4 shrink-0"
+                        />
+                        <label 
+                          htmlFor={`online-topic-${index}`}
+                          className="text-xs font-bold text-slate-700 leading-tight cursor-pointer select-none"
+                        >
+                          {topicItem}
+                        </label>
+                      </div>
+
+                      {/* Admin/Teacher quick edit actions directly on the card */}
+                      {isUserEducatorOrAdmin && (
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartEditTopic(index);
+                            }}
+                            className="p-1 bg-indigo-50 text-indigo-650 hover:bg-indigo-100 rounded cursor-pointer"
+                            title="Chỉnh sửa tên chủ đề"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Bạn có chắc chắn muốn xóa chủ đề này: "${topicItem}"?`)) {
+                                handleDeleteTopic(index);
+                              }
+                            }}
+                            className="p-1 bg-rose-50 text-rose-650 hover:bg-rose-100 rounded cursor-pointer"
+                            title="Xóa chủ đề này"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Star evaluation control block */}
@@ -926,6 +888,29 @@ export default function SurveySection({
                   </div>
                 );
               })}
+
+              {/* Inline creator card for Admin/Teacher */}
+              {isUserEducatorOrAdmin && (
+                <div className="p-3.5 rounded-xl border border-dashed border-indigo-300 bg-indigo-50/20 hover:bg-indigo-50/45 flex flex-col justify-between gap-3 text-left transition duration-250 min-h-[110px] animate-fade-in">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-indigo-900 block uppercase tracking-wider">Thêm chủ đề mới</span>
+                    <input
+                      type="text"
+                      placeholder="e.g. Vấn đề vệ sinh học đường..."
+                      value={newTopicInput}
+                      onChange={e => setNewTopicInput(e.target.value)}
+                      className="w-full text-xs bg-white border border-indigo-150 rounded-lg p-2 font-medium text-slate-800 focus:outline-indigo-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddTopic}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold p-2 rounded-lg text-[10px] transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Thêm vào danh mục
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
