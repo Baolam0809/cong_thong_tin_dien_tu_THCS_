@@ -281,15 +281,15 @@ export default function GradingSection({
               </div>
               
               <div className="shrink-0 flex items-center gap-2 self-end sm:self-center">
-                {onDeleteSubmission && (
+                {onDeleteSubmission && (currentUser?.role === 'Admin' || currentUser?.role === 'Giáo viên') && (
                   <button
                     onClick={() => {
-                      if (confirm(`Bạn có chắc chắn muốn xóa bài làm học bạ của học sinh "${sub.student}"? Hành động này không thể hoàn tác.`)) {
+                      if (confirm(`CẢNH BÁO QUAN TRỌNG: Bạn có chắc chắn muốn xóa vĩnh viễn bài làm học bạ của học sinh "${sub.student}"? Hành động này sẽ xóa sạch dữ liệu điểm số, không thể khôi phục và ảnh hưởng trực tiếp đến kết quả học bạ số của em học sinh!`)) {
                         onDeleteSubmission(sub.id);
                       }
                     }}
                     className="p-2.5 text-rose-600 hover:bg-rose-50 hover:text-rose-700 border border-transparent hover:border-rose-100 rounded-xl transition cursor-pointer"
-                    title="Xóa vĩnh viễn bài nộp này"
+                    title="Xóa vĩnh viễn bài nộp này (Chỉ dành cho GV/Admin)"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
