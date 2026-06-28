@@ -340,8 +340,8 @@ export default function Header({
             })}
           </div>
           
-          {/* SEMESTER / ACADEMIC YEAR SELECTOR (RED BOX IN SCREENSHOT) - Restricted to Admin role & styled with warm apricot yellow */}
-          {currentUser?.role === 'Admin' && (
+          {/* SEMESTER / ACADEMIC YEAR SELECTOR (RED BOX IN SCREENSHOT) - Visible to all logged-in accounts & styled with warm apricot yellow */}
+          {currentUser && (
             <div className="flex items-center gap-1.5 md:gap-2 bg-amber-50 border border-amber-250 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs shadow-sm shrink-0 animate-fade-in" id="semester-academic-year-widget">
               <span className="flex items-center gap-1 md:gap-1.5 font-black text-[9px] md:text-[11px] text-amber-800 uppercase select-none shrink-0">
                 <GraduationCap className="w-3.5 h-3.5 text-brand-orange animate-bounce" />
