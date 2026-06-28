@@ -255,6 +255,12 @@ export default function App() {
     return localStorage.getItem('thcs_academic_year') || '2025 - 2026';
   });
 
+  const [accountsHistory, setAccountsHistory] = useState<Account[][]>([]);
+
+  const handleSaveAccountsHistory = () => {
+    setAccountsHistory(prev => [...prev, [...accounts]]);
+  };
+
   const [notices, setNotices] = useState<HomeroomNotice[]>(() => {
     const saved = localStorage.getItem('thcs_homeroom_notices');
     if (saved) return JSON.parse(saved);
@@ -1132,6 +1138,7 @@ export default function App() {
     parents?: string,
     phone?: string
   ) => {
+    handleSaveAccountsHistory();
     if (id) {
       setAccounts(prev =>
         prev.map(a => a.id === id ? { 
@@ -1691,6 +1698,8 @@ export default function App() {
               currentSection={currentSection as any}
               accounts={accounts}
               setAccounts={setAccounts}
+              accountsHistory={accountsHistory}
+              setAccountsHistory={setAccountsHistory}
               classes={classes}
               setClasses={setClasses}
               assignments={assignments}

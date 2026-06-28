@@ -35,6 +35,8 @@ interface AdminSectionsProps {
   currentSection: 'accounts' | 'classes' | 'subjects' | 'exams' | 'homework';
   accounts: Account[];
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
+  accountsHistory?: Account[][];
+  setAccountsHistory?: React.Dispatch<React.SetStateAction<Account[][]>>;
   classes: Class[];
   setClasses: React.Dispatch<React.SetStateAction<Class[]>>;
   assignments: Assignment[];
@@ -62,6 +64,8 @@ export default function AdminSections({
   currentSection,
   accounts,
   setAccounts,
+  accountsHistory = [],
+  setAccountsHistory,
   classes,
   setClasses,
   assignments,
@@ -93,6 +97,30 @@ export default function AdminSections({
 
   // Homework history for undo
   const [homeworkHistory, setHomeworkHistory] = useState<Homework[][]>([]);
+
+  const saveAccountsStateForUndo = () => {
+    if (setAccountsHistory) {
+      setAccountsHistory(prev => [...prev, [...accounts]]);
+    }
+  };
+
+  const handleUndoAccounts = () => {
+    if (!hasUndoPermission) {
+      showToast("Tài khoản của bạn không có quyền hoàn tác tài khoản! Vui lòng liên hệ Admin.", "error");
+      return;
+    }
+    if (!accountsHistory || accountsHistory.length === 0) {
+      showToast("Không có lịch sử thao tác tài khoản để hoàn tác!", "info");
+      return;
+    }
+    const previous = accountsHistory[accountsHistory.length - 1];
+    setAccounts(previous);
+    if (setAccountsHistory) {
+      setAccountsHistory(prev => prev.slice(0, -1));
+    }
+    localStorage.setItem('thcs_accounts', JSON.stringify(previous));
+    showToast("Đã hoàn tác thao tác quản lý tài khoản thành công!", "success");
+  };
 
   // Bulk import accounts
   const [showBulk, setShowBulk] = useState(false);
@@ -133,6 +161,7 @@ export default function AdminSections({
         showToast("Không thể xóa tài quản trị mặc định hệ thống!", "info");
         return;
       }
+      saveAccountsStateForUndo();
       setAccounts(prev => prev.filter(a => a.id !== id));
       showToast(`Đã xóa tài khoản: ${username}`, "success");
     };
@@ -142,6 +171,7 @@ export default function AdminSections({
         showToast("Chỉ Quản trị viên (Admin) mới có quyền cấp phát phân quyền thao tác!", "error");
         return;
       }
+      saveAccountsStateForUndo();
       const updated = accounts.map(acc => {
         if (acc.id === accId) {
           const nextVal = !acc[field];
@@ -235,6 +265,7 @@ export default function AdminSections({
 
         const finalMergedList = Array.from(mergedMap.values());
 
+        saveAccountsStateForUndo();
         setAccounts(finalMergedList);
         localStorage.setItem('thcs_accounts', JSON.stringify(finalMergedList));
 
@@ -476,6 +507,7 @@ export default function AdminSections({
       });
 
       const updatedAccounts = [...finalToImport, ...accounts];
+      saveAccountsStateForUndo();
       setAccounts(updatedAccounts);
       localStorage.setItem('thcs_accounts', JSON.stringify(updatedAccounts));
       
@@ -660,6 +692,7 @@ export default function AdminSections({
         existingUsernames.add(uniqueUsername);
       });
 
+      saveAccountsStateForUndo();
       setAccounts(prev => [...finalToImport, ...prev]);
       
       let warnMsg = duplicateCount > 0 
@@ -1224,6 +1257,26 @@ export default function AdminSections({
                   <td className="p-3 text-slate-550 font-bold text-[11px]">{acc.extra || '-'}</td>
                   <td className="p-3 text-right">
                     <div className="flex gap-1 justify-end">
+                      {/* RED BOX: Hoàn tác (Undo) action button */}
+                      <button
+                        onClick={() => {
+                          if (!hasUndoPermission) {
+                            showToast("Tài khoản của bạn không có quyền hoàn tác! Vui lòng liên hệ Admin.", "error");
+                            return;
+                          }
+                          handleUndoAccounts();
+                        }}
+                        disabled={!accountsHistory || accountsHistory.length === 0}
+                        className={`font-bold text-xs p-1.5 rounded-lg border transition ${
+                          accountsHistory && accountsHistory.length > 0
+                            ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-600 hover:text-white cursor-pointer animate-pulse'
+                            : 'bg-slate-50 text-slate-350 border-slate-200 cursor-not-allowed'
+                        }`}
+                        title="Hoàn tác thao tác thay đổi tài khoản vừa thực hiện"
+                      >
+                        <Undo2 className="w-3.5 h-3.5" />
+                      </button>
+
                       <button
                         onClick={() => {
                           if (!hasEditPermission) {
