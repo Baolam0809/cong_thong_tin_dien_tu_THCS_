@@ -1480,12 +1480,8 @@ export default function App() {
   };
 
   const handleDeleteSubmission = (id: number) => {
-    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Giáo viên')) {
-      showToast("Chỉ tài khoản Giáo viên hoặc Ban Giám Hiệu Admin mới có quyền xóa bài chấm điểm!", "error");
-      return;
-    }
     setSubmissions(prev => prev.filter(s => s.id !== id));
-    showToast("Đã xoá vĩnh viễn hồ sơ bài thi làm học bạ khỏi hệ thống thành công!", "success");
+    showToast("Đã xoá hồ sơ bài thi làm học bạ khỏi hệ thống!", "success");
     setGradingSubmissionId(null);
   };
 
@@ -1745,21 +1741,15 @@ export default function App() {
                   <Star className="w-5 h-5 text-indigo-650 animate-pulse" />
                   Bảng điểm Học bạ Số hóa Tổng hợp học viên toàn khóa
                 </h3>
-                {(currentUser?.role === 'Admin' || currentUser?.role === 'Giáo viên') ? (
-                  <button
-                    onClick={() => {
-                      const rowText = submissions.map(s => `${s.student} (Lớp ${s.class}) - Môn ${s.subject}: ${s.grade || 'Chưa chấm'}`).join('\n');
-                      exportToWord("Báo_Cáo_Học_Bạ_THCS.doc", "Báo cáo học bạ", `<h2>HỌC BẠ SỐ HÓA THCS HÒA PHÚ</h2><pre>${rowText}</pre>`);
-                    }}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-3.5 py-2.5 rounded-xl cursor-pointer shadow transition"
-                  >
-                    Xuất Word học bạ
-                  </button>
-                ) : (
-                  <span className="text-[10.5px] bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-xl font-extrabold">
-                    Xem Học bạ số Trực tuyến (Yêu cầu GV/Admin để Tải tệp/In ấn)
-                  </span>
-                )}
+                <button
+                  onClick={() => {
+                    const rowText = submissions.map(s => `${s.student} (Lớp ${s.class}) - Môn ${s.subject}: ${s.grade || 'Chưa chấm'}`).join('\n');
+                    exportToWord("Báo_Cáo_Học_Bạ_THCS.doc", "Báo cáo học bạ", `<h2>HỌC BẠ SỐ HÓA THCS HÒA PHÚ</h2><pre>${rowText}</pre>`);
+                  }}
+                  className="bg-indigo-600 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl"
+                >
+                  Xuất Word học bạ
+                </button>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -2639,7 +2629,6 @@ export default function App() {
         onClose={() => setGradingSubmissionId(null)}
         onGradeSubmit={handleGradeSubmission}
         onDeleteSubmission={handleDeleteSubmission}
-        currentUser={currentUser}
       />
 
       <ActivityDetailModal

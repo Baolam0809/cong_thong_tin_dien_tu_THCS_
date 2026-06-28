@@ -1501,9 +1501,8 @@ interface GradingModalProps {
   onClose: () => void;
   onGradeSubmit: (essayScore: number, remark: string) => void;
   onDeleteSubmission?: (id: number) => void;
-  currentUser?: Account | null;
 }
-export function GradingModal({ isOpen, gradingId, submissions, onClose, onGradeSubmit, onDeleteSubmission, currentUser }: GradingModalProps) {
+export function GradingModal({ isOpen, gradingId, submissions, onClose, onGradeSubmit, onDeleteSubmission }: GradingModalProps) {
   const [essayVal, setEssayVal] = useState('0.0');
   const [remarkText, setRemarkText] = useState('');
 
@@ -1532,11 +1531,7 @@ export function GradingModal({ isOpen, gradingId, submissions, onClose, onGradeS
   };
 
   const handleLocalDelete = () => {
-    if (!currentUser || (currentUser.role !== 'Admin' && currentUser.role !== 'Giáo viên')) {
-      showToast("Chỉ tài khoản Giáo viên hoặc Ban Giám Hiệu Admin mới có quyền xóa bài chấm điểm!", "error");
-      return;
-    }
-    if (confirm(`CẢNH BÁO QUAN TRỌNG: Bạn có chắc chắn muốn xóa vĩnh viễn bài làm học bạ của học sinh "${targetSub.student}"? Hành động này sẽ xóa sạch dữ liệu điểm số, không thể khôi phục và ảnh hưởng trực tiếp đến kết quả học bạ số của em học sinh!`)) {
+    if (confirm(`Bạn có chắc chắn muốn xóa bài làm học bạ của học sinh "${targetSub.student}"? Hành động này không thể hoàn tác.`)) {
       if (onDeleteSubmission) {
         onDeleteSubmission(targetSub.id);
       }
@@ -1619,12 +1614,12 @@ export function GradingModal({ isOpen, gradingId, submissions, onClose, onGradeS
 
             {/* Modal Footer / Action controls Inside the Form */}
             <div className="flex justify-between items-center gap-2 pt-4 border-t sticky bottom-0 bg-white">
-              {onDeleteSubmission && (currentUser?.role === 'Admin' || currentUser?.role === 'Giáo viên') && (
+              {onDeleteSubmission && (
                 <button
                   type="button"
                   onClick={handleLocalDelete}
                   className="bg-rose-55 hover:bg-rose-100 text-rose-600 p-2.5 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer text-xs font-bold"
-                  title="Xóa vĩnh viễn bài nộp này (Chỉ dành cho GV/Admin)"
+                  title="Xóa vĩnh viễn bài nộp này"
                 >
                   <Trash2 className="w-4 h-4" />
                   Xóa bài

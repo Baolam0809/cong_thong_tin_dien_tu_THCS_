@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileSpreadsheet, FileText, Printer, CheckSquare, Settings, Lock } from 'lucide-react';
+import { FileSpreadsheet, FileText, Printer, CheckSquare, Settings } from 'lucide-react';
 import { Submission, Account } from '../types';
 import { exportToWord, exportToExcel, triggerPrintWindow } from '../utils';
 import { showToast } from './Toast';
@@ -183,8 +183,6 @@ export default function ExportCenterSection({
     showToast("Mở màn hình in ấn / xuất PDF thành công!", "success");
   };
 
-  const isAuthorized = currentUser && (currentUser.role === 'Admin' || currentUser.role === 'Giáo viên' || currentUser.role === 'Nhân viên');
-
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
       <h3 className="font-extrabold text-sm text-slate-800 border-b pb-3 mb-4 flex items-center gap-2">
@@ -192,54 +190,34 @@ export default function ExportCenterSection({
         Trung tâm Kết xuất Số liệu hồ sơ, Học bạ và In ấn Điện tử
       </h3>
 
-      {!isAuthorized ? (
-        <div className="p-8 border border-slate-200/60 rounded-2xl bg-slate-50 text-center space-y-3.5 max-w-lg mx-auto my-4 shadow-sm">
-          <div className="w-14 h-14 bg-rose-50 border border-rose-200 rounded-full flex items-center justify-center mx-auto shadow-sm">
-            <Lock className="w-6 h-6 text-rose-500 animate-pulse" />
-          </div>
-          <div className="space-y-1.5">
-            <h4 className="text-sm font-black text-rose-800 uppercase tracking-wider">Không có quyền tải xuống & in ấn</h4>
-            <p className="text-[11px] text-slate-600 font-bold leading-relaxed">
-              Theo quy định bảo mật học bạ điện tử của trường THCS Hòa Phú, tài khoản 
-              <span className="text-indigo-700"> {currentUser?.role || 'Khách vãng lai'} </span> 
-              <b>chỉ được xem trực tuyến kết quả điểm học vụ</b>.
-            </p>
-            <p className="text-[10px] text-slate-500 font-medium leading-relaxed italic">
-              Việc tự ý kết xuất tệp Word, Excel (.doc, .xlsx) hoặc kích hoạt in ấn học bạ tự do bị vô hiệu hóa cho vai trò này. 
-              Vui lòng liên hệ Văn phòng Ban Giám Hiệu hoặc Thầy Cô chủ nhiệm để được phê chuẩn, nhận bản in chính thức có đóng dấu đỏ.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <button
-            onClick={handleExportWord}
-            className="p-5 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 hover:shadow-md transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
-          >
-            <FileText className="w-8 h-8 text-blue-600 animate-bounce" />
-            <span className="text-xs font-extrabold text-blue-800">Word (.doc Báo Cáo)</span>
-            <span className="text-[10px] text-slate-400 font-bold block">Thẩm định học vụ ban hành</span>
-          </button>
-          
-          <button
-            onClick={handleExportExcel}
-            className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 hover:shadow-md transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
-          >
-            <FileSpreadsheet className="w-8 h-8 text-emerald-600 animate-pulse" />
-            <span className="text-xs font-extrabold text-emerald-800">Excel (Đa Sheet)</span>
-            <span className="text-[10px] text-slate-400 font-bold block">Biểu đồ cơ sở dữ liệu số</span>
-          </button>
-          
-          <button
-            onClick={handleExportPDF}
-            className="p-5 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 hover:shadow-md transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
-          >
-            <Printer className="w-8 h-8 text-rose-600" />
-            <span className="text-xs font-extrabold text-rose-800">PDF / In Bảng biểu</span>
-            <span className="text-[10px] text-slate-400 font-bold block">Ấn phẩm đóng dấu đỏ số</span>
-          </button>
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button
+          onClick={handleExportWord}
+          className="p-5 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-100 hover:shadow-md transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+        >
+          <FileText className="w-8 h-8 text-blue-600 animate-bounce" />
+          <span className="text-xs font-extrabold text-blue-800">Word (.doc Báo Cáo)</span>
+          <span className="text-[10px] text-slate-400 font-bold block">Thẩm định học vụ ban hành</span>
+        </button>
+        
+        <button
+          onClick={handleExportExcel}
+          className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 hover:shadow-md transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+        >
+          <FileSpreadsheet className="w-8 h-8 text-emerald-600 animate-pulse" />
+          <span className="text-xs font-extrabold text-emerald-800">Excel (Đa Sheet)</span>
+          <span className="text-[10px] text-slate-400 font-bold block">Biểu đồ cơ sở dữ liệu số</span>
+        </button>
+        
+        <button
+          onClick={handleExportPDF}
+          className="p-5 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 hover:shadow-md transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+        >
+          <Printer className="w-8 h-8 text-rose-600" />
+          <span className="text-xs font-extrabold text-rose-800">PDF / In Bảng biểu</span>
+          <span className="text-[10px] text-slate-400 font-bold block">Ấn phẩm đóng dấu đỏ số</span>
+        </button>
+      </div>
     </div>
   );
 }
