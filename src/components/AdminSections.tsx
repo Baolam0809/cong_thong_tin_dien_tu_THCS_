@@ -22,10 +22,12 @@ import {
   X,
   RefreshCw,
   Database,
-  Globe
+  Globe,
+  LogIn,
+  History
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { Account, Class, Assignment, Exam, Homework } from '../types';
+import { Account, Class, Assignment, Exam, Homework, LoginLog } from '../types';
 import { showToast } from './Toast';
 import { fullSubjects } from '../data';
 import { fetchTableData, syncTableToSupabase } from '../lib/supabase';
@@ -37,6 +39,8 @@ interface AdminSectionsProps {
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
   accountsHistory?: Account[][];
   setAccountsHistory?: React.Dispatch<React.SetStateAction<Account[][]>>;
+  loginLogs?: LoginLog[];
+  setLoginLogs?: React.Dispatch<React.SetStateAction<LoginLog[]>>;
   classes: Class[];
   setClasses: React.Dispatch<React.SetStateAction<Class[]>>;
   assignments: Assignment[];
@@ -66,6 +70,8 @@ export default function AdminSections({
   setAccounts,
   accountsHistory = [],
   setAccountsHistory,
+  loginLogs = [],
+  setLoginLogs,
   classes,
   setClasses,
   assignments,
@@ -125,7 +131,7 @@ export default function AdminSections({
   // Bulk import accounts
   const [showBulk, setShowBulk] = useState(false);
   const [showStudentBulk, setShowStudentBulk] = useState(false);
-  const [accountsGroup, setAccountsGroup] = useState<'internal' | 'public'>('internal');
+  const [accountsGroup, setAccountsGroup] = useState<'internal' | 'public' | 'history'>('internal');
   const [accountsTabFilter, setAccountsTabFilter] = useState<'all' | 'teachers' | 'staff' | 'others'>('all');
   const [publicAccountsTabFilter, setPublicAccountsTabFilter] = useState<'all_public' | 'students' | 'parents' | 'guests'>('all_public');
   const [importedAccounts, setImportedAccounts] = useState<any[]>([]);
@@ -1088,7 +1094,7 @@ export default function AdminSections({
         )}
 
         {/* HỆ THỐNG PHÂN LOẠI TÀI KHOẢN CHÍNH */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-1.5 bg-slate-100 rounded-2xl">
+        <div className={`grid grid-cols-1 ${currentUser?.role === 'Admin' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4 p-1.5 bg-slate-100 rounded-2xl`}>
           <button
             onClick={() => setAccountsGroup('internal')}
             className={`flex items-center justify-center gap-3 py-3 px-4 rounded-xl font-extrabold text-xs md:text-sm transition-all cursor-pointer ${
@@ -1117,6 +1123,23 @@ export default function AdminSections({
               <span className="block font-black text-xs md:text-sm">Tài khoản HS / Phụ huynh / Khách ({accounts.filter(a => a.role === 'Học sinh' || a.role === 'Phụ huynh' || a.role === 'Khách').length})</span>
             </div>
           </button>
+
+          {currentUser?.role === 'Admin' && (
+            <button
+              onClick={() => setAccountsGroup('history')}
+              className={`flex items-center justify-center gap-3 py-3 px-4 rounded-xl font-extrabold text-xs md:text-sm transition-all cursor-pointer ${
+                accountsGroup === 'history'
+                  ? 'bg-white text-purple-700 shadow-md border border-slate-200/50 scale-[1.01]'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50/50'
+              }`}
+            >
+              <History className="w-5 h-5 text-purple-600 animate-spin-slow" />
+              <div className="text-left">
+                <span className="block text-[11px] uppercase tracking-wider font-bold opacity-75">Giám sát Bảo mật</span>
+                <span className="block font-black text-xs md:text-sm">Lịch sử Đăng nhập ({loginLogs.length})</span>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Bộ lọc vai trò tài khoản theo phân loại con */}
@@ -1154,7 +1177,7 @@ export default function AdminSections({
               Cán bộ & Nhân viên ({accounts.filter(a => a.role === 'Admin' || a.role === 'Nhân viên').length})
             </button>
           </div>
-        ) : (
+        ) : accountsGroup === 'public' ? (
           <div className="flex flex-wrap border-b border-slate-200 gap-1.5 p-1 bg-slate-50 rounded-xl max-w-fit">
             <button
               onClick={() => setPublicAccountsTabFilter('all_public')}
@@ -1197,113 +1220,190 @@ export default function AdminSections({
               Tài khoản Khách ({accounts.filter(a => a.role === 'Khách').length})
             </button>
           </div>
+        ) : (
+          <div className="flex flex-wrap justify-between items-center gap-3 p-3 bg-purple-50 border border-purple-150 rounded-xl">
+            <div className="text-xs font-bold text-purple-900 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-600 animate-pulse inline-block"></span>
+              <span>Hệ thống bảo mật ghi nhận tổng cộng <strong className="text-purple-950 font-black">{loginLogs.length}</strong> phiên kết nối thành công.</span>
+            </div>
+            {loginLogs.length > 0 && (
+              <button
+                onClick={() => {
+                  if (confirm("Bạn có chắc chắn muốn xóa tất cả lịch sử đăng nhập để giải phóng bộ nhớ?")) {
+                    if (setLoginLogs) setLoginLogs([]);
+                    localStorage.removeItem('thcs_login_logs');
+                    showToast("Đã dọn dẹp sạch toàn bộ lịch sử đăng nhập!", "success");
+                  }
+                }}
+                className="bg-white hover:bg-purple-100 text-purple-700 font-bold text-[11px] px-3 py-1.5 rounded-lg border border-purple-200 shadow-sm transition cursor-pointer"
+              >
+                Xóa sạch lịch sử
+              </button>
+            )}
+          </div>
         )}
 
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 font-extrabold uppercase border-b border-slate-200">
-                <th className="p-3">
-                  {accountsGroup === 'internal'
-                    ? (accountsTabFilter === 'teachers' ? 'Họ và Tên Giáo Viên' : 'Họ và Tên Nhân Sự / Vai Trò')
-                    : 'Họ và Tên Học Sinh / PH / Khách (Tự do)'
-                  }
-                </th>
-                <th className="p-3">Tên đăng nhập (Username)</th>
-                <th className="p-3">Vai trò chức vụ</th>
-                <th className="p-3">Thông tin đính danh (Phân Công Giảng Dạy / Lớp / Ghi chú)</th>
-                <th className="p-3 text-right">Lựa chọn</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
-              {accounts.filter(acc => {
-                if (accountsGroup === 'internal') {
-                  const isInternal = acc.role === 'Admin' || acc.role === 'Giáo viên' || acc.role === 'Nhân viên';
-                  if (!isInternal) return false;
-                  if (accountsTabFilter === 'teachers') return acc.role === 'Giáo viên';
-                  if (accountsTabFilter === 'staff') return acc.role === 'Admin' || acc.role === 'Nhân viên';
-                  return true;
-                } else {
-                  const isPublic = acc.role === 'Học sinh' || acc.role === 'Phụ huynh' || acc.role === 'Khách';
-                  if (!isPublic) return false;
-                  if (publicAccountsTabFilter === 'students') return acc.role === 'Học sinh';
-                  if (publicAccountsTabFilter === 'parents') return acc.role === 'Phụ huynh';
-                  if (publicAccountsTabFilter === 'guests') return acc.role === 'Khách';
-                  return true;
-                }
-              }).map(acc => (
-                <tr key={acc.id} className="border-b hover:bg-slate-50 transition duration-155">
-                  <td className="p-3">
-                    <b className="text-slate-800 block text-xs">{acc.name}</b>
-                    {acc.canPostNews && (
-                      <span className="bg-amber-50 text-amber-700 text-[8.5px] border border-amber-200 px-1 py-0.2 rounded-md font-bold inline-block mt-0.5">
-                        Quyền đăng tin hoạt động
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3 font-mono font-bold text-slate-650">{acc.username}</td>
-                  <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                      acc.role === 'Admin' ? 'bg-rose-50 text-rose-800 border-rose-200' :
-                      acc.role === 'Nhân viên' ? 'bg-purple-50 text-purple-800 border-purple-200' :
-                      acc.role === 'Giáo viên' ? 'bg-teal-50 text-teal-800 border-teal-200' :
-                      acc.role === 'Phụ huynh' ? 'bg-orange-50 text-brand-orange border-orange-200' :
-                      acc.role === 'Khách' ? 'bg-sky-50 text-sky-800 border-sky-200' :
-                      'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    }`}>
-                      {acc.role}
-                    </span>
-                  </td>
-                  <td className="p-3 text-slate-550 font-bold text-[11px]">{acc.extra || '-'}</td>
-                  <td className="p-3 text-right">
-                    <div className="flex gap-1 justify-end">
-                      {/* RED BOX: Hoàn tác (Undo) action button */}
-                      <button
-                        onClick={() => {
-                          if (!hasUndoPermission) {
-                            showToast("Tài khoản của bạn không có quyền hoàn tác! Vui lòng liên hệ Admin.", "error");
-                            return;
-                          }
-                          handleUndoAccounts();
-                        }}
-                        disabled={!accountsHistory || accountsHistory.length === 0}
-                        className={`font-bold text-xs p-1.5 rounded-lg border transition ${
-                          accountsHistory && accountsHistory.length > 0
-                            ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-600 hover:text-white cursor-pointer animate-pulse'
-                            : 'bg-slate-50 text-slate-350 border-slate-200 cursor-not-allowed'
-                        }`}
-                        title="Hoàn tác thao tác thay đổi tài khoản vừa thực hiện"
-                      >
-                        <Undo2 className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          if (!hasEditPermission) {
-                            showToast("Tài khoản của bạn không có quyền chỉnh sửa thông tin tài khoản! Vui lòng liên hệ Admin.", "error");
-                            return;
-                          }
-                          onOpenAddAccount(acc);
-                        }}
-                        className="bg-blue-50 hover:bg-brand-blue text-brand-blue hover:text-white font-bold text-xs p-1.5 rounded-lg transition cursor-pointer"
-                        title="Chỉnh sửa tài khoản"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteAcc(acc.id, acc.role, acc.username)}
-                        className="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white font-bold text-xs p-1.5 rounded-lg transition cursor-pointer"
-                        title="Xóa tài khoản"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
+        {accountsGroup === 'history' ? (
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 font-extrabold uppercase border-b border-slate-200">
+                  <th className="p-3">Mã phiên (ID)</th>
+                  <th className="p-3">Họ và Tên thành viên</th>
+                  <th className="p-3">Tên đăng nhập (Username)</th>
+                  <th className="p-3">Vai trò chức vụ</th>
+                  <th className="p-3">Thời gian đăng nhập</th>
+                  <th className="p-3">Thiết bị & Trình duyệt</th>
+                  <th className="p-3 text-center">Trạng thái</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {loginLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-slate-400 italic font-bold">
+                      Hệ thống chưa ghi nhận bất kỳ lịch sử đăng nhập nào.
+                    </td>
+                  </tr>
+                ) : (
+                  loginLogs.map(log => (
+                    <tr key={log.id} className="border-b hover:bg-slate-50 transition duration-155">
+                      <td className="p-3 font-mono text-slate-400 font-bold">{log.id}</td>
+                      <td className="p-3">
+                        <strong className="text-slate-850 text-xs block">{log.name}</strong>
+                      </td>
+                      <td className="p-3 font-mono font-bold text-indigo-700">{log.username}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                          log.role === 'Admin' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                          log.role === 'Nhân viên' ? 'bg-purple-50 text-purple-800 border-purple-200' :
+                          log.role === 'Giáo viên' ? 'bg-teal-50 text-teal-800 border-teal-200' :
+                          log.role === 'Phụ huynh' ? 'bg-orange-50 text-brand-orange border-orange-200' :
+                          log.role === 'Khách' ? 'bg-sky-50 text-sky-800 border-sky-200' :
+                          'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        }`}>
+                          {log.role}
+                        </span>
+                      </td>
+                      <td className="p-3 font-bold text-slate-550">{log.timestamp}</td>
+                      <td className="p-3 font-semibold text-slate-500">{log.deviceInfo}</td>
+                      <td className="p-3 text-center">
+                        <span className="bg-emerald-50 text-emerald-700 text-[10px] border border-emerald-200 px-2 py-0.5 rounded-full font-extrabold inline-block">
+                          {log.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 font-extrabold uppercase border-b border-slate-200">
+                  <th className="p-3">
+                    {accountsGroup === 'internal'
+                      ? (accountsTabFilter === 'teachers' ? 'Họ và Tên Giáo Viên' : 'Họ và Tên Nhân Sự / Vai Trò')
+                      : 'Họ và Tên Học Sinh / PH / Khách (Tự do)'
+                    }
+                  </th>
+                  <th className="p-3">Tên đăng nhập (Username)</th>
+                  <th className="p-3">Vai trò chức vụ</th>
+                  <th className="p-3">Thông tin đính danh (Phân Công Giảng Dạy / Lớp / Ghi chú)</th>
+                  <th className="p-3 text-right">Lựa chọn</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium">
+                {accounts.filter(acc => {
+                  if (accountsGroup === 'internal') {
+                    const isInternal = acc.role === 'Admin' || acc.role === 'Giáo viên' || acc.role === 'Nhân viên';
+                    if (!isInternal) return false;
+                    if (accountsTabFilter === 'teachers') return acc.role === 'Giáo viên';
+                    if (accountsTabFilter === 'staff') return acc.role === 'Admin' || acc.role === 'Nhân viên';
+                    return true;
+                  } else {
+                    const isPublic = acc.role === 'Học sinh' || acc.role === 'Phụ huynh' || acc.role === 'Khách';
+                    if (!isPublic) return false;
+                    if (publicAccountsTabFilter === 'students') return acc.role === 'Học sinh';
+                    if (publicAccountsTabFilter === 'parents') return acc.role === 'Phụ huynh';
+                    if (publicAccountsTabFilter === 'guests') return acc.role === 'Khách';
+                    return true;
+                  }
+                }).map(acc => (
+                  <tr key={acc.id} className="border-b hover:bg-slate-50 transition duration-155">
+                    <td className="p-3">
+                      <b className="text-slate-800 block text-xs">{acc.name}</b>
+                      {acc.canPostNews && (
+                        <span className="bg-amber-50 text-amber-700 text-[8.5px] border border-amber-200 px-1 py-0.2 rounded-md font-bold inline-block mt-0.5">
+                          Quyền đăng tin hoạt động
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3 font-mono font-bold text-slate-650">{acc.username}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                        acc.role === 'Admin' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                        acc.role === 'Nhân viên' ? 'bg-purple-50 text-purple-800 border-purple-200' :
+                        acc.role === 'Giáo viên' ? 'bg-teal-50 text-teal-800 border-teal-200' :
+                        acc.role === 'Phụ huynh' ? 'bg-orange-50 text-brand-orange border-orange-200' :
+                        acc.role === 'Khách' ? 'bg-sky-50 text-sky-800 border-sky-200' :
+                        'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      }`}>
+                        {acc.role}
+                      </span>
+                    </td>
+                    <td className="p-3 text-slate-550 font-bold text-[11px]">{acc.extra || '-'}</td>
+                    <td className="p-3 text-right">
+                      <div className="flex gap-1 justify-end">
+                        {/* RED BOX: Hoàn tác (Undo) action button */}
+                        <button
+                          onClick={() => {
+                            if (!hasUndoPermission) {
+                              showToast("Tài khoản của bạn không có quyền hoàn tác! Vui lòng liên hệ Admin.", "error");
+                              return;
+                            }
+                            handleUndoAccounts();
+                          }}
+                          disabled={!accountsHistory || accountsHistory.length === 0}
+                          className={`font-bold text-xs p-1.5 rounded-lg border transition ${
+                            accountsHistory && accountsHistory.length > 0
+                              ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-600 hover:text-white cursor-pointer animate-pulse'
+                              : 'bg-slate-50 text-slate-350 border-slate-200 cursor-not-allowed'
+                          }`}
+                          title="Hoàn tác thao tác thay đổi tài khoản vừa thực hiện"
+                        >
+                          <Undo2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (!hasEditPermission) {
+                              showToast("Tài khoản của bạn không có quyền chỉnh sửa thông tin tài khoản! Vui lòng liên hệ Admin.", "error");
+                              return;
+                            }
+                            onOpenAddAccount(acc);
+                          }}
+                          className="bg-blue-50 hover:bg-brand-blue text-brand-blue hover:text-white font-bold text-xs p-1.5 rounded-lg transition cursor-pointer"
+                          title="Chỉnh sửa tài khoản"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAcc(acc.id, acc.role, acc.username)}
+                          className="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white font-bold text-xs p-1.5 rounded-lg transition cursor-pointer"
+                          title="Xóa tài khoản"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   };

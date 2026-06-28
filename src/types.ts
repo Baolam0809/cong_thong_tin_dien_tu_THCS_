@@ -240,3 +240,15 @@ export interface VisitorLog {
   action: string;
   snapshotUrl?: string; // base64 photo taken via camera
 }
+
+export interface LoginLog {
+  id: string;
+  userId?: number;
+  name: string;
+  username: string;
+  role: string;
+  timestamp: string;
+  deviceInfo: string;
+  status: string;
+}
+

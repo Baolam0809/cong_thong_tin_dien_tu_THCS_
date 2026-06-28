@@ -52,7 +52,8 @@ import {
   HomeroomNotice,
   YoutubeLesson,
   UpcomingSchedule,
-  VisitorLog
+  VisitorLog,
+  LoginLog
 } from './types';
 
 import VisitorMonitoringSection from './components/VisitorMonitoringSection';
@@ -312,6 +313,11 @@ export default function App() {
 
   const [visitorLogs, setVisitorLogs] = useState<VisitorLog[]>(() => {
     const saved = localStorage.getItem('thcs_visitor_logs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>(() => {
+    const saved = localStorage.getItem('thcs_login_logs');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -958,6 +964,31 @@ export default function App() {
     setIsLoginOpen(false);
     showToast(`Đăng nhập thành công! Chào mừng ${matched.role === 'Admin' ? 'Quản trị bản' : matched.name} đã kết nối.`, "success");
     addVisitorLog(`Đăng nhập thành công vào hệ thống học vụ số với vai trò ${matched.role}`);
+
+    // Record login log
+    const userAgent = navigator.userAgent;
+    let deviceInfo = "Trình duyệt Web";
+    if (userAgent.includes("Edg")) deviceInfo = "Microsoft Edge";
+    else if (userAgent.includes("Chrome")) deviceInfo = "Google Chrome";
+    else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) deviceInfo = "Apple Safari";
+    else if (userAgent.includes("Firefox")) deviceInfo = "Mozilla Firefox";
+
+    const newLoginLog: LoginLog = {
+      id: `ll-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      userId: matched.id,
+      name: matched.name,
+      username: matched.username,
+      role: matched.role,
+      timestamp: new Date().toLocaleString('vi-VN'),
+      deviceInfo: deviceInfo,
+      status: 'Thành công'
+    };
+
+    setLoginLogs(prev => {
+      const updated = [newLoginLog, ...prev].slice(0, 500);
+      localStorage.setItem('thcs_login_logs', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleExecuteRegister = (name: string, user: string, pass: string, role: string, extra: string) => {
@@ -1700,6 +1731,8 @@ export default function App() {
               setAccounts={setAccounts}
               accountsHistory={accountsHistory}
               setAccountsHistory={setAccountsHistory}
+              loginLogs={loginLogs}
+              setLoginLogs={setLoginLogs}
               classes={classes}
               setClasses={setClasses}
               assignments={assignments}
