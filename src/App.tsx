@@ -78,6 +78,67 @@ import { registerToastCallback, showToast } from './components/Toast';
 import { Bell, Calendar, HelpCircle, Gamepad, FolderHeart, Award, BookOpen, Star, AlertTriangle, ArrowLeft, X, ClipboardList, Database, CloudLightning, CheckCircle2 } from 'lucide-react';
 import { exportToWord } from './utils';
 import { supabase, fetchTableData, syncTableToSupabase, checkDatabaseStatus, DBStatus, DDL_SQL_STATEMENT } from './lib/supabase';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  Legend
+} from 'recharts';
+import { TrendingUp, BarChart2, Percent, AlertCircle } from 'lucide-react';
+
+interface StudentGpa {
+  name: string;
+  class: string;
+  gpa: number;
+}
+
+const MOCK_STUDENTS_GPA: StudentGpa[] = [
+  { name: "Nguyễn Kim Ngân", class: "9A", gpa: 8.8 },
+  { name: "Phạm Minh Đức", class: "9A", gpa: 9.2 },
+  { name: "Lê Thùy Dương", class: "9A", gpa: 7.5 },
+  { name: "Trần Gia Bảo", class: "9A", gpa: 8.2 },
+  { name: "Nguyễn Bích Phương", class: "9A", gpa: 6.8 },
+  { name: "Đặng Anh Tuấn", class: "9B", gpa: 8.0 },
+  { name: "Ngô Minh Triết", class: "9B", gpa: 9.5 },
+  { name: "Bùi Khánh Linh", class: "9B", gpa: 7.2 },
+  { name: "Hoàng Đức Anh", class: "9B", gpa: 5.8 },
+  { name: "Phan Tuyết Mai", class: "9B", gpa: 8.4 },
+  { name: "Trịnh Quốc Huy", class: "8A", gpa: 8.9 },
+  { name: "Đỗ Thùy Trang", class: "8A", gpa: 7.8 },
+  { name: "Vũ Hải Nam", class: "8A", gpa: 9.0 },
+  { name: "Nguyễn Mai Anh", class: "8A", gpa: 6.4 },
+  { name: "Phạm Tiến Dũng", class: "8A", gpa: 4.8 },
+  { name: "Lê Minh Khôi", class: "8B", gpa: 8.3 },
+  { name: "Bùi Tiến Đạt", class: "8B", gpa: 7.6 },
+  { name: "Nguyễn Hà Phương", class: "8B", gpa: 9.1 },
+  { name: "Dương Gia Khánh", class: "8B", gpa: 6.9 },
+  { name: "Trần Mai Chi", class: "8B", gpa: 8.7 },
+  { name: "Nguyễn Quốc Anh", class: "7A", gpa: 7.2 },
+  { name: "Phạm Thảo Nguyên", class: "7A", gpa: 8.5 },
+  { name: "Đỗ Nam Khánh", class: "7A", gpa: 9.3 },
+  { name: "Hoàng Gia Huy", class: "7A", gpa: 6.0 },
+  { name: "Lê Quỳnh Chi", class: "7A", gpa: 7.9 },
+  { name: "Trần Minh Quân", class: "7B", gpa: 8.1 },
+  { name: "Nguyễn Ngọc Diệp", class: "7B", gpa: 8.6 },
+  { name: "Vũ Đức Thắng", class: "7B", gpa: 7.4 },
+  { name: "Phạm Hồng Ngọc", class: "7B", gpa: 5.2 },
+  { name: "Bùi Nhật Minh", class: "7B", gpa: 9.0 },
+  { name: "Đinh Thế Vinh", class: "6A", gpa: 8.7 },
+  { name: "Nguyễn Hữu Đạt", class: "6A", gpa: 7.3 },
+  { name: "Lý Bảo Trân", class: "6A", gpa: 9.4 },
+  { name: "Trần Khánh Vy", class: "6A", gpa: 6.8 },
+  { name: "Phan Thanh Sơn", class: "6A", gpa: 8.0 },
+  { name: "Lê Cát Tường", class: "6B", gpa: 7.9 },
+  { name: "Nguyễn Huy Hoàng", class: "6B", gpa: 8.5 },
+  { name: "Phạm Bảo Nam", class: "6B", gpa: 6.5 },
+  { name: "Trần Hoài An", class: "6B", gpa: 9.2 },
+  { name: "Vũ Gia Linh", class: "6B", gpa: 5.5 }
+];
 
 export default function App() {
   // ==========================================
@@ -343,6 +404,10 @@ export default function App() {
   // Guess game state
   const [guessVal, setGuessVal] = useState('');
   const [gameMsg, setGameMsg] = useState('Hãy chọn đoán một con số bí mật từ 1 đến 50!');
+
+  // GPA Report states
+  const [gpaClassFilter, setGpaClassFilter] = useState('all');
+  const [gpaMode, setGpaMode] = useState<'benchmark' | 'real'>('benchmark');
 
   // ==========================================
   // INITIAL SUPABASE BULK LOAD
@@ -1751,6 +1816,247 @@ export default function App() {
                   Xuất Word học bạ
                 </button>
               </div>
+
+              {(() => {
+                const activeGpaList = (() => {
+                  if (gpaMode === 'real') {
+                    const studentGradesMap: Record<string, { total: number; count: number; class: string }> = {};
+                    submissions.forEach(s => {
+                      if (s.grade !== null) {
+                        if (!studentGradesMap[s.student]) {
+                          studentGradesMap[s.student] = { total: 0, count: 0, class: s.class };
+                        }
+                        studentGradesMap[s.student].total += s.grade;
+                        studentGradesMap[s.student].count += 1;
+                      }
+                    });
+                    return Object.entries(studentGradesMap).map(([name, data]) => ({
+                      name,
+                      class: data.class,
+                      gpa: Number((data.total / data.count).toFixed(2))
+                    }));
+                  } else {
+                    return MOCK_STUDENTS_GPA;
+                  }
+                })();
+
+                const filteredGpaList = gpaClassFilter === 'all' 
+                  ? activeGpaList 
+                  : activeGpaList.filter(s => s.class === gpaClassFilter);
+
+                const rangesConfig = [
+                  { name: 'Xuất sắc (9.0 - 10.0)', min: 9.0, max: 10.0, color: '#6366f1' },
+                  { name: 'Giỏi (8.0 - 8.9)', min: 8.0, max: 8.99, color: '#06b6d4' },
+                  { name: 'Khá (6.5 - 7.9)', min: 6.5, max: 7.99, color: '#eab308' },
+                  { name: 'Trung bình (5.0 - 6.4)', min: 5.0, max: 6.49, color: '#f97316' },
+                  { name: 'Yếu / Kém (< 5.0)', min: 0.0, max: 4.99, color: '#ef4444' }
+                ];
+
+                const chartData = rangesConfig.map(range => {
+                  const count = filteredGpaList.filter(s => s.gpa >= range.min && s.gpa <= range.max).length;
+                  return {
+                    name: range.name,
+                    'Học sinh': count,
+                    color: range.color
+                  };
+                });
+
+                const totalStudents = filteredGpaList.length;
+                const averageGpa = totalStudents > 0 
+                  ? Number((filteredGpaList.reduce((sum, s) => sum + s.gpa, 0) / totalStudents).toFixed(2))
+                  : 0;
+
+                const aboveAverageCount = filteredGpaList.filter(s => s.gpa >= 6.5).length;
+                const aboveAverageRate = totalStudents > 0 
+                  ? Number(((aboveAverageCount / totalStudents) * 100).toFixed(1))
+                  : 0;
+
+                const weakCount = filteredGpaList.filter(s => s.gpa < 5.0).length;
+
+                const uniqueClasses = Array.from(new Set(activeGpaList.map(s => s.class))).sort();
+
+                return (
+                  <div className="mb-6 space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setGpaMode('benchmark')}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                            gpaMode === 'benchmark'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          Toàn trường (Thống kê mẫu)
+                        </button>
+                        <button
+                          onClick={() => setGpaMode('real')}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                            gpaMode === 'real'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          Bài nộp hiện có ({submissions.filter(s => s.grade !== null).length})
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <span className="text-[11px] font-bold text-slate-500 whitespace-nowrap">Lọc Chi Đội:</span>
+                        <select
+                          value={gpaClassFilter}
+                          onChange={(e) => setGpaClassFilter(e.target.value)}
+                          className="text-xs p-1.5 border rounded-xl bg-white font-extrabold text-slate-700 min-w-[110px] cursor-pointer"
+                        >
+                          <option value="all">Tất cả các lớp</option>
+                          {uniqueClasses.map(cls => (
+                            <option key={cls} value={cls}>Lớp {cls}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      <div className="lg:col-span-2 bg-slate-50/50 rounded-2xl p-4 border border-slate-150 flex flex-col justify-between min-h-[320px]">
+                        <div className="mb-2">
+                          <h4 className="text-[12px] font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wide">
+                            <BarChart2 className="w-4 h-4 text-indigo-600" />
+                            Phân bố phổ điểm học bạ điện tử (GPA)
+                          </h4>
+                          <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                            {gpaMode === 'benchmark' 
+                              ? `Mẫu phân tích chuẩn học lực khối 6-9 trường THCS Hòa Phú năm học 2026.`
+                              : `Kết quả từ điểm số bài thi trực tuyến đã phê chuẩn của học sinh.`}
+                          </p>
+                        </div>
+
+                        {totalStudents === 0 ? (
+                          <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-2">
+                            <AlertCircle className="w-10 h-10 text-slate-400 animate-bounce" />
+                            <p className="text-xs text-slate-500 font-bold">Chưa có dữ liệu học tập nào được phê chuẩn.</p>
+                            <p className="text-[10px] text-slate-400 font-medium">Hãy chấm điểm bài thi của học sinh để cập nhật bảng điểm thực tế!</p>
+                          </div>
+                        ) : (
+                          <div className="w-full h-[240px] mt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                data={chartData}
+                                margin={{ top: 10, right: 10, left: -25, bottom: 5 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis 
+                                  dataKey="name" 
+                                  tick={{ fill: '#64748b', fontSize: 9, fontWeight: '700' }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                />
+                                <YAxis 
+                                  allowDecimals={false}
+                                  tick={{ fill: '#64748b', fontSize: 9, fontWeight: '700' }}
+                                  axisLine={false}
+                                  tickLine={false}
+                                />
+                                <Tooltip
+                                  cursor={{ fill: 'rgba(99, 102, 241, 0.04)' }}
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length) {
+                                      const data = payload[0].payload;
+                                      return (
+                                        <div className="bg-slate-900 text-white px-3 py-2 rounded-xl text-[11px] shadow-lg font-bold border border-slate-700">
+                                          <p className="text-slate-300 font-extrabold">{data.name}</p>
+                                          <p className="mt-1 text-xs">Sĩ số: <span className="text-emerald-400 font-black">{payload[0].value} em</span></p>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                                <Bar dataKey="Học sinh" radius={[6, 6, 0, 0]} maxBarSize={45}>
+                                  {chartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Bar>
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
+                        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 p-3.5 border border-indigo-100 rounded-2xl flex flex-col justify-between">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[10px] font-black text-indigo-700/80 uppercase tracking-wider block">Sĩ số đánh giá</span>
+                              <b className="text-2xl font-black text-indigo-950 leading-none mt-1 inline-block">
+                                {totalStudents} <span className="text-xs font-extrabold text-indigo-700">học sinh</span>
+                              </b>
+                            </div>
+                            <span className="bg-white p-1.5 rounded-xl border border-indigo-100 shadow-sm">
+                              <Star className="w-4 h-4 text-indigo-600" />
+                            </span>
+                          </div>
+                          <p className="text-[9.5px] text-slate-500 font-bold mt-1">
+                            {gpaClassFilter === 'all' ? 'Toàn bộ các chi đội' : `Chỉ xét lớp ${gpaClassFilter}`}
+                          </p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-cyan-50 to-cyan-100/50 p-3.5 border border-cyan-150 rounded-2xl flex flex-col justify-between">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[10px] font-black text-cyan-800/80 uppercase tracking-wider block">GPA Trung bình</span>
+                              <b className="text-2xl font-black text-cyan-950 leading-none mt-1 inline-block">
+                                {averageGpa.toFixed(2)} <span className="text-xs font-extrabold text-cyan-700">/10.0</span>
+                              </b>
+                            </div>
+                            <span className="bg-white p-1.5 rounded-xl border border-cyan-150 shadow-sm">
+                              <TrendingUp className="w-4 h-4 text-cyan-600" />
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-1">
+                            <span className={`text-[9.5px] font-bold ${averageGpa >= 8.0 ? 'text-emerald-700' : averageGpa >= 6.5 ? 'text-indigo-700' : 'text-amber-700'}`}>
+                              Học lực: {averageGpa >= 8.0 ? 'Giỏi - Xuất sắc' : averageGpa >= 6.5 ? 'Khá' : 'Trung bình / Cần rèn luyện'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-3.5 border border-emerald-150 rounded-2xl flex flex-col justify-between">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[10px] font-black text-emerald-800/80 uppercase tracking-wider block">Đạt chuẩn trở lên (Khá/Giỏi)</span>
+                              <b className="text-2xl font-black text-emerald-950 leading-none mt-1 inline-block">
+                                {aboveAverageRate}% <span className="text-xs font-extrabold text-emerald-700">sĩ số</span>
+                              </b>
+                            </div>
+                            <span className="bg-white p-1.5 rounded-xl border border-emerald-150 shadow-sm">
+                              <Percent className="w-4 h-4 text-emerald-600" />
+                            </span>
+                          </div>
+                          <p className="text-[9.5px] text-slate-500 font-bold mt-1">
+                            {aboveAverageCount} em đạt điểm từ Khá (6.5) trở lên
+                          </p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 p-3.5 border border-rose-150 rounded-2xl flex flex-col justify-between">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-[10px] font-black text-rose-800/80 uppercase tracking-wider block">Cần bồi dưỡng học vụ</span>
+                              <b className="text-2xl font-black text-rose-950 leading-none mt-1 inline-block">
+                                {weakCount} <span className="text-xs font-extrabold text-rose-700">học sinh</span>
+                              </b>
+                            </div>
+                            <span className="bg-white p-1.5 rounded-xl border border-rose-150 shadow-sm">
+                              <AlertCircle className="w-4 h-4 text-rose-600" />
+                            </span>
+                          </div>
+                          <p className="text-[9.5px] text-slate-500 font-bold mt-1">
+                            {weakCount > 0 ? `Chiếm ${((weakCount / totalStudents) * 100).toFixed(1)}% - Cần lập kế hoạch phụ đạo` : 'Học sinh đạt chuẩn 100%, không có học sinh yếu'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="overflow-x-auto rounded-xl border border-slate-200">
                 <table className="w-full text-left text-xs border-collapse">
