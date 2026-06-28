@@ -7,6 +7,10 @@ export interface Account {
   extra: string;
   isFirstLogin?: boolean;
   canPostNews?: boolean;
+  canAdd?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canUndo?: boolean;
   studentId?: string; // Mã định danh
   cccd?: string; // CCCD
   dob?: string; // Năm sinh

@@ -83,6 +83,10 @@ export default function AdminSections({
 }: AdminSectionsProps) {
   
   const isReadOnly = currentUser && (currentUser.role === 'Học sinh' || currentUser.role === 'Phụ huynh' || currentUser.role === 'Khách');
+  const hasAddPermission = currentUser?.role === 'Admin' || currentUser?.canAdd === true;
+  const hasEditPermission = currentUser?.role === 'Admin' || currentUser?.canEdit === true;
+  const hasDeletePermission = currentUser?.role === 'Admin' || currentUser?.canDelete === true;
+  const hasUndoPermission = currentUser?.role === 'Admin' || currentUser?.canUndo === true;
 
   // Assignments history for undo
   const [assignmentHistory, setAssignmentHistory] = useState<Assignment[][]>([]);
@@ -107,6 +111,10 @@ export default function AdminSections({
   };
 
   const handleUndoHomework = () => {
+    if (!hasUndoPermission) {
+      showToast("Tài khoản của bạn không có quyền hoàn tác bài tập! Vui lòng liên hệ Admin.", "error");
+      return;
+    }
     if (homeworkHistory.length === 0) return;
     const prev = homeworkHistory[homeworkHistory.length - 1];
     setHomework(prev);
@@ -117,8 +125,8 @@ export default function AdminSections({
   // 1. ACCOUNTS VIEW
   const renderAccounts = () => {
     const handleDeleteAcc = (id: number, role: string, username: string) => {
-      if (isReadOnly) {
-        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      if (!hasDeletePermission) {
+        showToast("Tài khoản của bạn không có quyền xóa tài khoản! Vui lòng liên hệ Admin để phân quyền.", "error");
         return;
       }
       if (role === 'Admin' && username === 'admin') {
@@ -127,6 +135,30 @@ export default function AdminSections({
       }
       setAccounts(prev => prev.filter(a => a.id !== id));
       showToast(`Đã xóa tài khoản: ${username}`, "success");
+    };
+
+    const handleTogglePermission = async (accId: number, field: 'canAdd' | 'canEdit' | 'canDelete' | 'canUndo') => {
+      if (currentUser?.role !== 'Admin') {
+        showToast("Chỉ Quản trị viên (Admin) mới có quyền cấp phát phân quyền thao tác!", "error");
+        return;
+      }
+      const updated = accounts.map(acc => {
+        if (acc.id === accId) {
+          const nextVal = !acc[field];
+          const labels = {
+            canAdd: 'Thêm mới',
+            canEdit: 'Chỉnh sửa',
+            canDelete: 'Xóa bỏ',
+            canUndo: 'Hoàn tác'
+          };
+          showToast(`Đã ${nextVal ? 'cấp' : 'gỡ'} quyền [${labels[field]}] cho tài khoản ${acc.name}!`, "success");
+          return { ...acc, [field]: nextVal };
+        }
+        return acc;
+      });
+      setAccounts(updated);
+      localStorage.setItem('thcs_accounts', JSON.stringify(updated));
+      await syncTableToSupabase('thcs_accounts', updated, accounts);
     };
 
     const handleExportAccounts = () => {
@@ -165,8 +197,8 @@ export default function AdminSections({
 
     const handleSyncAccounts = async () => {
       if (isSyncing) return;
-      if (isReadOnly) {
-        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      if (!hasEditPermission) {
+        showToast("Tài khoản của bạn không có quyền đồng bộ dữ liệu đám mây! Vui lòng liên hệ Admin.", "error");
         return;
       }
       setIsSyncing(true);
@@ -403,8 +435,8 @@ export default function AdminSections({
     };
 
     const handleSaveImportedStudents = async () => {
-      if (isReadOnly) {
-        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      if (!hasAddPermission) {
+        showToast("Tài khoản của bạn không có quyền thêm học sinh! Vui lòng liên hệ Admin để phân quyền.", "error");
         return;
       }
       if (importedStudents.length === 0) {
@@ -588,8 +620,8 @@ export default function AdminSections({
     };
 
     const handleSaveImportedAccounts = () => {
-      if (isReadOnly) {
-        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      if (!hasAddPermission) {
+        showToast("Tài khoản của bạn không có quyền thêm tài khoản mới! Vui lòng liên hệ Admin để phân quyền.", "error");
         return;
       }
       if (importedAccounts.length === 0) {
@@ -641,15 +673,31 @@ export default function AdminSections({
 
     return (
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in space-y-4 text-left">
-        {isReadOnly && (
-          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
-            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
-              <p className="font-medium text-slate-600 leading-relaxed">
-                Bạn đang xem mục quản trị tài khoản với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
-                Bạn có quyền quan sát và tải báo cáo tài khoản về máy, nhưng <strong>không thể thêm, xóa hoặc đồng bộ tài khoản lên Cloud</strong>.
-              </p>
+        {currentUser?.role !== 'Admin' && (
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 shrink-0 text-indigo-600 mt-0.5 animate-pulse" />
+              <div className="text-xs space-y-1">
+                <p className="font-extrabold text-[13px] text-indigo-900">Bảng Phân Quyền Thao Tác Hành Chính</p>
+                <p className="font-medium text-slate-500 leading-relaxed">
+                  Tài khoản: <strong className="text-indigo-700 font-extrabold">{currentUser?.name || 'Khách vãng lai'}</strong> ({currentUser?.role || 'Khách'}). 
+                  Các quyền hành chính của bạn được phê duyệt và quản lý bởi Quản trị viên (Admin):
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasAddPermission ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasAddPermission ? '✓ Quyền Thêm' : '✗ Cấm Thêm'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasEditPermission ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasEditPermission ? '✓ Quyền Sửa' : '✗ Cấm Sửa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasDeletePermission ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasDeletePermission ? '✓ Quyền Xóa' : '✗ Cấm Xóa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasUndoPermission ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasUndoPermission ? '✓ Quyền Hoàn tác' : '✗ Cấm Hoàn tác'}
+              </span>
             </div>
           </div>
         )}
@@ -661,8 +709,8 @@ export default function AdminSections({
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => {
-                if (isReadOnly) {
-                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                if (currentUser?.role !== 'Admin') {
+                  showToast("Chỉ Quản trị viên (Admin) mới có quyền truy cập bảng phân quyền đăng tin!", "error");
                   return;
                 }
                 onOpenPermissionModal();
@@ -673,8 +721,8 @@ export default function AdminSections({
             </button>
             <button
               onClick={() => {
-                if (isReadOnly) {
-                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                if (!hasAddPermission) {
+                  showToast("Tài khoản của bạn không có quyền thêm tài khoản mới! Vui lòng liên hệ Admin.", "error");
                   return;
                 }
                 setShowBulk(prev => !prev);
@@ -687,8 +735,8 @@ export default function AdminSections({
             <button
               id="btn-student-bulk-import"
               onClick={() => {
-                if (isReadOnly) {
-                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                if (!hasAddPermission) {
+                  showToast("Tài khoản của bạn không có quyền cấp học sinh đồng loạt! Vui lòng liên hệ Admin.", "error");
                   return;
                 }
                 setShowStudentBulk(prev => !prev);
@@ -717,8 +765,8 @@ export default function AdminSections({
             </button>
             <button
               onClick={() => {
-                if (isReadOnly) {
-                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                if (!hasEditPermission) {
+                  showToast("Tài khoản của bạn không có quyền đồng bộ tài khoản! Vui lòng liên hệ Admin.", "error");
                   return;
                 }
                 onSyncAccountsWithAssignments();
@@ -730,8 +778,8 @@ export default function AdminSections({
             </button>
             <button
               onClick={() => {
-                if (isReadOnly) {
-                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                if (!hasAddPermission) {
+                  showToast("Tài khoản của bạn không có quyền cấp tài khoản mới! Vui lòng liên hệ Admin.", "error");
                   return;
                 }
                 onOpenAddAccount();
@@ -1130,6 +1178,7 @@ export default function AdminSections({
                 </th>
                 <th className="p-3">Tên đăng nhập (Username)</th>
                 <th className="p-3">Vai trò chức vụ</th>
+                <th className="p-3 text-center">Phân Quyền Thao Tác (Thêm/Sửa/Xóa/H.tác)</th>
                 <th className="p-3">Thông tin đính danh (Phân Công Giảng Dạy / Lớp / Ghi chú)</th>
                 <th className="p-3 text-right">Lựa chọn</th>
               </tr>
@@ -1173,24 +1222,107 @@ export default function AdminSections({
                       {acc.role}
                     </span>
                   </td>
+                  <td className="p-3 text-center">
+                    {acc.role === 'Admin' ? (
+                      <span className="bg-rose-50 text-rose-700 text-[9px] font-extrabold border border-rose-200 px-2 py-0.5 rounded-lg select-none">
+                        ★ Toàn Quyền Quản Trị
+                      </span>
+                    ) : (
+                      <div className="flex items-center justify-center gap-1">
+                        {/* canAdd Toggle */}
+                        <button
+                          onClick={() => {
+                            if (currentUser?.role === 'Admin') {
+                              handleTogglePermission(acc.id, 'canAdd');
+                            }
+                          }}
+                          disabled={currentUser?.role !== 'Admin'}
+                          className={`px-2 py-0.5 rounded text-[9px] font-black border transition ${
+                            acc.canAdd
+                              ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600 cursor-pointer'
+                              : 'bg-slate-50 text-slate-400 border-slate-250 hover:bg-slate-100 disabled:hover:bg-slate-50'
+                          }`}
+                          title={currentUser?.role === 'Admin' ? "Click để cấp/gỡ quyền Thêm mới" : "Quyền thêm mới"}
+                        >
+                          + Thêm
+                        </button>
+
+                        {/* canEdit Toggle */}
+                        <button
+                          onClick={() => {
+                            if (currentUser?.role === 'Admin') {
+                              handleTogglePermission(acc.id, 'canEdit');
+                            }
+                          }}
+                          disabled={currentUser?.role !== 'Admin'}
+                          className={`px-2 py-0.5 rounded text-[9px] font-black border transition ${
+                            acc.canEdit
+                              ? 'bg-sky-500 text-white border-sky-500 hover:bg-sky-600 cursor-pointer'
+                              : 'bg-slate-50 text-slate-400 border-slate-250 hover:bg-slate-100 disabled:hover:bg-slate-50'
+                          }`}
+                          title={currentUser?.role === 'Admin' ? "Click để cấp/gỡ quyền Chỉnh sửa" : "Quyền chỉnh sửa"}
+                        >
+                          ✎ Sửa
+                        </button>
+
+                        {/* canDelete Toggle */}
+                        <button
+                          onClick={() => {
+                            if (currentUser?.role === 'Admin') {
+                              handleTogglePermission(acc.id, 'canDelete');
+                            }
+                          }}
+                          disabled={currentUser?.role !== 'Admin'}
+                          className={`px-2 py-0.5 rounded text-[9px] font-black border transition ${
+                            acc.canDelete
+                              ? 'bg-rose-500 text-white border-rose-500 hover:bg-rose-600 cursor-pointer'
+                              : 'bg-slate-50 text-slate-400 border-slate-250 hover:bg-slate-100 disabled:hover:bg-slate-50'
+                          }`}
+                          title={currentUser?.role === 'Admin' ? "Click để cấp/gỡ quyền Xóa bỏ" : "Quyền xóa bỏ"}
+                        >
+                          ✖ Xóa
+                        </button>
+
+                        {/* canUndo Toggle */}
+                        <button
+                          onClick={() => {
+                            if (currentUser?.role === 'Admin') {
+                              handleTogglePermission(acc.id, 'canUndo');
+                            }
+                          }}
+                          disabled={currentUser?.role !== 'Admin'}
+                          className={`px-2 py-0.5 rounded text-[9px] font-black border transition ${
+                            acc.canUndo
+                              ? 'bg-purple-500 text-white border-purple-500 hover:bg-purple-600 cursor-pointer'
+                              : 'bg-slate-50 text-slate-400 border-slate-250 hover:bg-slate-100 disabled:hover:bg-slate-50'
+                          }`}
+                          title={currentUser?.role === 'Admin' ? "Click để cấp/gỡ quyền Hoàn tác" : "Quyền hoàn tác"}
+                        >
+                          ⟲ H.tác
+                        </button>
+                      </div>
+                    )}
+                  </td>
                   <td className="p-3 text-slate-550 font-bold text-[11px]">{acc.extra || '-'}</td>
                   <td className="p-3 text-right">
                     <div className="flex gap-1 justify-end">
                       <button
                         onClick={() => {
-                          if (isReadOnly) {
-                            showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                          if (!hasEditPermission) {
+                            showToast("Tài khoản của bạn không có quyền chỉnh sửa thông tin tài khoản! Vui lòng liên hệ Admin.", "error");
                             return;
                           }
                           onOpenAddAccount(acc);
                         }}
                         className="bg-blue-50 hover:bg-brand-blue text-brand-blue hover:text-white font-bold text-xs p-1.5 rounded-lg transition cursor-pointer"
+                        title="Chỉnh sửa tài khoản"
                       >
                         <Edit className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteAcc(acc.id, acc.role, acc.username)}
                         className="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white font-bold text-xs p-1.5 rounded-lg transition cursor-pointer"
+                        title="Xóa tài khoản"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1209,15 +1341,31 @@ export default function AdminSections({
   const renderClasses = () => {
     return (
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left space-y-4">
-        {isReadOnly && (
-          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
-            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
-              <p className="font-medium text-slate-600 leading-relaxed">
-                Bạn đang xem cơ cấu lớp học với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
-                Bạn có thể tự do tham khảo phân công giáo viên chủ nhiệm và sĩ số, nhưng <strong>không thể thêm lớp, sửa thông tin lớp hoặc xóa lớp học</strong>.
-              </p>
+        {currentUser?.role !== 'Admin' && (
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 shrink-0 text-indigo-600 mt-0.5 animate-pulse" />
+              <div className="text-xs space-y-1">
+                <p className="font-extrabold text-[13px] text-indigo-900">Bảng Phân Quyền Thao Tác Cơ Cấu Lớp Học</p>
+                <p className="font-medium text-slate-500 leading-relaxed">
+                  Tài khoản: <strong className="text-indigo-700 font-extrabold">{currentUser?.name || 'Khách vãng lai'}</strong> ({currentUser?.role || 'Khách'}). 
+                  Quyền quản lý cơ cấu lớp hành chính được phê duyệt bởi Quản trị viên (Admin):
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasAddPermission ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasAddPermission ? '✓ Quyền Thêm' : '✗ Cấm Thêm'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasEditPermission ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasEditPermission ? '✓ Quyền Sửa' : '✗ Cấm Sửa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasDeletePermission ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasDeletePermission ? '✓ Quyền Xóa' : '✗ Cấm Xóa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasUndoPermission ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasUndoPermission ? '✓ Quyền Hoàn tác' : '✗ Cấm Hoàn tác'}
+              </span>
             </div>
           </div>
         )}
@@ -1230,8 +1378,8 @@ export default function AdminSections({
             {classHistory.length > 0 && (
               <button
                 onClick={() => {
-                  if (isReadOnly) {
-                    showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  if (!hasUndoPermission) {
+                    showToast("Tài khoản của bạn không có quyền hoàn tác lớp học! Vui lòng liên hệ Admin.", "error");
                     return;
                   }
                   onUndoClass();
@@ -1245,8 +1393,8 @@ export default function AdminSections({
             )}
             <button
               onClick={() => {
-                if (isReadOnly) {
-                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                if (!hasAddPermission) {
+                  showToast("Tài khoản của bạn không có quyền thêm lớp học mới! Vui lòng liên hệ Admin.", "error");
                   return;
                 }
                 onOpenAddClass();
@@ -1286,8 +1434,8 @@ export default function AdminSections({
               <div className="flex justify-end gap-1.5 mt-3 pt-2 border-t border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity duration-155">
                 <button
                   onClick={() => {
-                    if (isReadOnly) {
-                      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                    if (!hasEditPermission) {
+                      showToast("Tài khoản của bạn không có quyền chỉnh sửa thông tin lớp học! Vui lòng liên hệ Admin.", "error");
                       return;
                     }
                     onOpenAddClass(cls);
@@ -1299,8 +1447,8 @@ export default function AdminSections({
                 </button>
                 <button
                   onClick={() => {
-                    if (isReadOnly) {
-                      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                    if (!hasDeletePermission) {
+                      showToast("Tài khoản của bạn không có quyền xóa lớp học! Vui lòng liên hệ Admin.", "error");
                       return;
                     }
                     if (confirm(`Bạn có chắc chắn muốn xóa lớp ${cls.lop} khỏi hệ thống?`)) {
@@ -1323,8 +1471,8 @@ export default function AdminSections({
   // 3. SUBJECTS AND ASSIGNMENTS
   const renderSubjects = () => {
     const handleUndo = () => {
-      if (isReadOnly) {
-        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      if (!hasUndoPermission) {
+        showToast("Tài khoản của bạn không có quyền hoàn tác phân công! Vui lòng liên hệ Admin.", "error");
         return;
       }
       if (assignmentHistory.length === 0) return;
@@ -1335,8 +1483,8 @@ export default function AdminSections({
     };
 
     const handleDeleteAssignment = (id: number) => {
-      if (isReadOnly) {
-        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      if (!hasDeletePermission) {
+        showToast("Tài khoản của bạn không có quyền xóa phân công giảng dạy! Vui lòng liên hệ Admin.", "error");
         return;
       }
       // Record history
@@ -1347,15 +1495,31 @@ export default function AdminSections({
 
     return (
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left space-y-4">
-        {isReadOnly && (
-          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
-            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
-              <p className="font-medium text-slate-600 leading-relaxed">
-                Bạn đang xem danh sách phân công môn học với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
-                Bạn có thể tham khảo bảng môn học được đảm nhiệm bởi thầy cô, nhưng <strong>không thể thêm, sửa đổi phân công hoặc xóa bỏ bản ghi phân công</strong>.
-              </p>
+        {currentUser?.role !== 'Admin' && (
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 shrink-0 text-indigo-600 mt-0.5 animate-pulse" />
+              <div className="text-xs space-y-1">
+                <p className="font-extrabold text-[13px] text-indigo-900">Bảng Phân Quyền Phân Công Giảng Dạy</p>
+                <p className="font-medium text-slate-500 leading-relaxed">
+                  Tài khoản: <strong className="text-indigo-700 font-extrabold">{currentUser?.name || 'Khách vãng lai'}</strong> ({currentUser?.role || 'Khách'}). 
+                  Quyền thay đổi phân công môn học/lớp học được phê duyệt bởi Quản trị viên (Admin):
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasAddPermission ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasAddPermission ? '✓ Quyền Thêm' : '✗ Cấm Thêm'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasEditPermission ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasEditPermission ? '✓ Quyền Sửa' : '✗ Cấm Sửa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasDeletePermission ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasDeletePermission ? '✓ Quyền Xóa' : '✗ Cấm Xóa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasUndoPermission ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasUndoPermission ? '✓ Quyền Hoàn tác' : '✗ Cấm Hoàn tác'}
+              </span>
             </div>
           </div>
         )}
@@ -1375,8 +1539,8 @@ export default function AdminSections({
             )}
             <button
               onClick={() => {
-                if (isReadOnly) {
-                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                if (!hasEditPermission) {
+                  showToast("Tài khoản của bạn không có quyền đồng bộ tài khoản! Vui lòng liên hệ Admin.", "error");
                   return;
                 }
                 onSyncAccountsWithAssignments();
@@ -1388,8 +1552,8 @@ export default function AdminSections({
             </button>
             <button
               onClick={() => {
-                if (isReadOnly) {
-                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                if (!hasAddPermission) {
+                  showToast("Tài khoản của bạn không có quyền thêm phân công mới! Vui lòng liên hệ Admin.", "error");
                   return;
                 }
                 onOpenAddAssignment();
@@ -1456,8 +1620,8 @@ export default function AdminSections({
                     <div className="flex gap-1.5 justify-end">
                       <button
                         onClick={() => {
-                          if (isReadOnly) {
-                            showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                          if (!hasEditPermission) {
+                            showToast("Tài khoản của bạn không có quyền chỉnh sửa phân công! Vui lòng liên hệ Admin.", "error");
                             return;
                           }
                           onOpenAddAssignment(asg);
@@ -1487,15 +1651,31 @@ export default function AdminSections({
   const renderExams = () => {
     return (
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left space-y-4">
-        {isReadOnly && (
-          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
-            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
-              <p className="font-medium text-slate-600 leading-relaxed">
-                Bạn đang xem Ngân hàng đề kiểm tra với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
-                Bạn có quyền đọc đề bài và xem danh sách đề, nhưng <strong>không thể thêm hoặc xóa tệp đề kiểm tra</strong>.
-              </p>
+        {currentUser?.role !== 'Admin' && (
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 shrink-0 text-indigo-600 mt-0.5 animate-pulse" />
+              <div className="text-xs space-y-1">
+                <p className="font-extrabold text-[13px] text-indigo-900">Bảng Phân Quyền Ngân Hàng Đề Kiểm Tra</p>
+                <p className="font-medium text-slate-500 leading-relaxed">
+                  Tài khoản: <strong className="text-indigo-700 font-extrabold">{currentUser?.name || 'Khách vãng lai'}</strong> ({currentUser?.role || 'Khách'}). 
+                  Quyền đăng tải và điều phối đề thi được phê duyệt bởi Quản trị viên (Admin):
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasAddPermission ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasAddPermission ? '✓ Quyền Thêm' : '✗ Cấm Thêm'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasEditPermission ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasEditPermission ? '✓ Quyền Sửa' : '✗ Cấm Sửa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasDeletePermission ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasDeletePermission ? '✓ Quyền Xóa' : '✗ Cấm Xóa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasUndoPermission ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasUndoPermission ? '✓ Quyền Hoàn tác' : '✗ Cấm Hoàn tác'}
+              </span>
             </div>
           </div>
         )}
@@ -1506,8 +1686,8 @@ export default function AdminSections({
           </h3>
           <button
             onClick={() => {
-              if (isReadOnly) {
-                showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+              if (!hasAddPermission) {
+                showToast("Tài khoản của bạn không có quyền đăng đề kiểm tra mới! Vui lòng liên hệ Admin.", "error");
                 return;
               }
               onOpenAddExam();
@@ -1546,15 +1726,31 @@ export default function AdminSections({
   const renderHomework = () => {
     return (
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left space-y-4">
-        {isReadOnly && (
-          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
-            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
-            <div className="text-xs space-y-1">
-              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
-              <p className="font-medium text-slate-600 leading-relaxed">
-                Bạn đang xem danh sách bài tập về nhà với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
-                Bạn có thể đọc đề bài tập, tải tệp tài liệu đi kèm, nhưng <strong>không thể giao bài tập mới, sửa hoặc xóa bài tập đã giao</strong>.
-              </p>
+        {currentUser?.role !== 'Admin' && (
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 shrink-0 text-indigo-600 mt-0.5 animate-pulse" />
+              <div className="text-xs space-y-1">
+                <p className="font-extrabold text-[13px] text-indigo-900">Bảng Phân Quyền Bài Tập Tự Rèn Luyện</p>
+                <p className="font-medium text-slate-500 leading-relaxed">
+                  Tài khoản: <strong className="text-indigo-700 font-extrabold">{currentUser?.name || 'Khách vãng lai'}</strong> ({currentUser?.role || 'Khách'}). 
+                  Quyền đăng tải và sửa đổi danh sách bài tập tự rèn luyện được phê duyệt bởi Quản trị viên (Admin):
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasAddPermission ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasAddPermission ? '✓ Quyền Thêm' : '✗ Cấm Thêm'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasEditPermission ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasEditPermission ? '✓ Quyền Sửa' : '✗ Cấm Sửa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasDeletePermission ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasDeletePermission ? '✓ Quyền Xóa' : '✗ Cấm Xóa'}
+              </span>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black border ${hasUndoPermission ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                {hasUndoPermission ? '✓ Quyền Hoàn tác' : '✗ Cấm Hoàn tác'}
+              </span>
             </div>
           </div>
         )}
@@ -1565,8 +1761,8 @@ export default function AdminSections({
           </h3>
           <button
             onClick={() => {
-              if (isReadOnly) {
-                showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+              if (!hasAddPermission) {
+                showToast("Tài khoản của bạn không có quyền giao bài tập mới! Vui lòng liên hệ Admin.", "error");
                 return;
               }
               onOpenAddHomework();
@@ -1653,8 +1849,8 @@ export default function AdminSections({
                 <div className="flex md:flex-col gap-2 items-center justify-center shrink-0 border-t md:border-t-0 md:border-l pt-3 md:pt-0 md:pl-4 border-slate-150 self-stretch">
                   <button
                     onClick={() => {
-                      if (isReadOnly) {
-                        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                      if (!hasEditPermission) {
+                        showToast("Tài khoản của bạn không có quyền chỉnh sửa bài tập! Vui lòng liên hệ Admin.", "error");
                         return;
                       }
                       saveHomeworkStateForUndo();
@@ -1667,8 +1863,8 @@ export default function AdminSections({
                   </button>
                   <button
                     onClick={() => {
-                      if (isReadOnly) {
-                        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                      if (!hasDeletePermission) {
+                        showToast("Tài khoản của bạn không có quyền gỡ bài tập! Vui lòng liên hệ Admin.", "error");
                         return;
                       }
                       saveHomeworkStateForUndo();
