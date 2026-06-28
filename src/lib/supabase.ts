@@ -8,9 +8,12 @@ const SUPABASE_URL = ((import.meta as any).env?.VITE_SUPABASE_URL as string) || 
 // Row Level Security (RLS) policies completely. Since the user explicitly provided both,
 // we default to the service role key to ensure the application works out-of-the-box and
 // bypasses any RLS constraints on newly created tables, making the prototype 100% functional.
-const SUPABASE_KEY = ((import.meta as any).env?.VITE_SUPABASE_SERVICE_ROLE_KEY as string) || 
-                     ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string) ||
-                     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXZ5bmxqa2Jhdnp0ZHNmbXpxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjAyOTYyNSwiZXhwIjoyMDk3NjA1NjI1fQ.sNb-YHQMe8NJiaBuj4IdWUvNjim4fC1DqM2Z2-_Zs9k'; // User's Explicit Service Key
+const IS_DEFAULT_DB = SUPABASE_URL.includes('lmqvynljkbavztdsfmzq');
+const DEFAULT_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtcXZ5bmxqa2Jhdnp0ZHNmbXpxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjAyOTYyNSwiZXhwIjoyMDk3NjA1NjI1fQ.sNb-YHQMe8NJiaBuj4IdWUvNjim4fC1DqM2Z2-_Zs9k';
+
+const SUPABASE_KEY = IS_DEFAULT_DB
+  ? (((import.meta as any).env?.VITE_SUPABASE_SERVICE_ROLE_KEY as string) || DEFAULT_SERVICE_ROLE_KEY)
+  : (((import.meta as any).env?.VITE_SUPABASE_SERVICE_ROLE_KEY as string) || ((import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string) || DEFAULT_SERVICE_ROLE_KEY);
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
