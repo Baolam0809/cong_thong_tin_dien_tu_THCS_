@@ -513,6 +513,7 @@ export default function AdminSections({
                                 <span className={`px-1 rounded text-[9px] font-bold ${
                                   imp.role === 'Giáo viên' ? 'bg-blue-50 text-brand-blue' :
                                   imp.role === 'Phụ huynh' ? 'bg-orange-50 text-brand-orange' :
+                                  imp.role === 'Khách' ? 'bg-indigo-50 text-indigo-700' :
                                   'bg-emerald-50 text-emerald-800'
                                 }`}>
                                   {imp.role}
@@ -582,11 +583,11 @@ export default function AdminSections({
             onClick={() => setAccountsTabFilter('others')}
             className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
               accountsTabFilter === 'others'
-                ? 'bg-white text-indigo-700 shadow-sm border border-indigo-200'
+                ? 'bg-white text-indigo-700 shadow-sm border border-indigo-200 font-extrabold'
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
             }`}
           >
-            Học sinh & Phụ huynh ({accounts.filter(a => a.role === 'Học sinh' || a.role === 'Phụ huynh').length})
+            Khách, Học sinh & Phụ huynh ({accounts.filter(a => a.role === 'Học sinh' || a.role === 'Phụ huynh' || a.role === 'Khách').length})
           </button>
         </div>
 
@@ -605,7 +606,7 @@ export default function AdminSections({
               {accounts.filter(acc => {
                 if (accountsTabFilter === 'teachers') return acc.role === 'Giáo viên';
                 if (accountsTabFilter === 'staff') return acc.role === 'Admin' || acc.role === 'Nhân viên';
-                if (accountsTabFilter === 'others') return acc.role === 'Học sinh' || acc.role === 'Phụ huynh';
+                if (accountsTabFilter === 'others') return acc.role === 'Học sinh' || acc.role === 'Phụ huynh' || acc.role === 'Khách';
                 return true;
               }).map(acc => (
                 <tr key={acc.id} className="border-b hover:bg-slate-50 transition duration-155">
@@ -624,6 +625,7 @@ export default function AdminSections({
                       acc.role === 'Nhân viên' ? 'bg-purple-50 text-purple-800 border-purple-200' :
                       acc.role === 'Giáo viên' ? 'bg-teal-50 text-teal-800 border-teal-200' :
                       acc.role === 'Phụ huynh' ? 'bg-orange-50 text-brand-orange border-orange-200' :
+                      acc.role === 'Khách' ? 'bg-sky-50 text-sky-800 border-sky-200' :
                       'bg-emerald-50 text-emerald-800 border-emerald-200'
                     }`}>
                       {acc.role}

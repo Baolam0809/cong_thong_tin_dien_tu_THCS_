@@ -484,6 +484,7 @@ export default function VisitorMonitoringSection({
                             log.role === 'Giáo viên' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
                             log.role === 'Học sinh' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                             log.role === 'Phụ huynh' ? 'bg-pink-50 text-pink-600 border border-pink-100' :
+                            log.role === 'Khách' ? 'bg-sky-50 text-sky-600 border border-sky-100' :
                             'bg-slate-100 text-slate-600'
                           }`}>
                             {log.role}

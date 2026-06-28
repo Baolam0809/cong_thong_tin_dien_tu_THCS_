@@ -52,7 +52,7 @@ export default function Sidebar({
       id: 'documents',
       label: 'Văn bản chỉ đạo',
       icon: FolderOpen,
-      roles: ['Admin', 'Giáo viên', 'Học sinh', 'Phụ huynh'],
+      roles: ['Admin', 'Giáo viên', 'Khách', 'Học sinh', 'Phụ huynh'],
       color: 'text-brand-orange'
     },
     {

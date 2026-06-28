@@ -143,7 +143,7 @@ export function RegisterModal({ isOpen, onClose, onExecuteRegister }: RegisterMo
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'Học sinh' | 'Phụ huynh'>('Học sinh');
+  const [role, setRole] = useState<'Học sinh' | 'Phụ huynh' | 'Khách'>('Học sinh');
   const [extra, setExtra] = useState('');
 
   if (!isOpen) return null;
@@ -164,7 +164,8 @@ export function RegisterModal({ isOpen, onClose, onExecuteRegister }: RegisterMo
       return;
     }
 
-    onExecuteRegister(name.trim(), username.trim(), password, role, extra.trim() || (role === 'Học sinh' ? "9A" : "Phụ huynh em Nguyễn Kim Ngân"));
+    const finalExtra = role === 'Khách' ? "Khách tự do" : (extra.trim() || (role === 'Học sinh' ? "9A" : "Phụ huynh em Nguyễn Kim Ngân"));
+    onExecuteRegister(name.trim(), username.trim(), password, role, finalExtra);
     setName('');
     setUsername('');
     setPassword('');
@@ -191,7 +192,7 @@ export function RegisterModal({ isOpen, onClose, onExecuteRegister }: RegisterMo
           <div>
             <input
               type="text"
-              placeholder="Họ và tên thí sinh / phụ huynh"
+              placeholder={role === 'Khách' ? "Họ và tên của bạn" : "Họ và tên thí sinh / phụ huynh"}
               value={name}
               onChange={e => setName(e.target.value)}
               className="w-full text-xs p-2.5 border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white"
@@ -246,19 +247,22 @@ export function RegisterModal({ isOpen, onClose, onExecuteRegister }: RegisterMo
             >
               <option value="Học sinh">Học sinh tự kết nối</option>
               <option value="Phụ huynh">Phụ huynh học sinh</option>
+              <option value="Khách">Khách vãng lai (Truy cập tự do)</option>
             </select>
           </div>
 
-          <div>
-            <input
-              type="text"
-              placeholder={role === 'Học sinh' ? "Điền lớp học (Ví dụ: 9A, 9B)" : "Phụ huynh em... (Ví dụ: Phụ huynh em Nguyễn Kim Ngân)"}
-              value={extra}
-              onChange={e => setExtra(e.target.value)}
-              className="w-full text-xs p-2.5 border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white"
-              required
-            />
-          </div>
+          {role !== 'Khách' && (
+            <div>
+              <input
+                type="text"
+                placeholder={role === 'Học sinh' ? "Điền lớp học (Ví dụ: 9A, 9B)" : "Phụ huynh em... (Ví dụ: Phụ huynh em Nguyễn Kim Ngân)"}
+                value={extra}
+                onChange={e => setExtra(e.target.value)}
+                className="w-full text-xs p-2.5 border rounded-xl font-bold focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white"
+                required
+              />
+            </div>
+          )}
 
           <button
             type="submit"
@@ -706,6 +710,7 @@ export function AddAccountModal({ isOpen, editingAccount, onClose, onSave }: Add
               <option value="Học sinh">Học sinh tự kết nối</option>
               <option value="Giáo viên">Giáo viên trực lớp bộ môn</option>
               <option value="Nhân viên">Nhân viên Văn phòng / Khác</option>
+              <option value="Khách">Khách vãng lai / Độc giả</option>
               <option value="Phụ huynh">Phụ huynh học sinh</option>
               <option value="Admin">Hội đồng Quản trị Admin</option>
             </select>

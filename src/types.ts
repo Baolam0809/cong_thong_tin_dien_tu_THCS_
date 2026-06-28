@@ -3,7 +3,7 @@ export interface Account {
   name: string;
   username: string;
   password: string;
-  role: 'Admin' | 'Giáo viên' | 'Nhân viên' | 'Học sinh' | 'Phụ huynh';
+  role: 'Admin' | 'Giáo viên' | 'Nhân viên' | 'Khách' | 'Học sinh' | 'Phụ huynh';
   extra: string;
   isFirstLogin?: boolean;
   canPostNews?: boolean;
