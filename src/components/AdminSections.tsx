@@ -92,11 +92,14 @@ export default function AdminSections({
 
   // Bulk import accounts
   const [showBulk, setShowBulk] = useState(false);
+  const [showStudentBulk, setShowStudentBulk] = useState(false);
   const [accountsGroup, setAccountsGroup] = useState<'internal' | 'public'>('internal');
   const [accountsTabFilter, setAccountsTabFilter] = useState<'all' | 'teachers' | 'staff' | 'others'>('all');
   const [publicAccountsTabFilter, setPublicAccountsTabFilter] = useState<'all_public' | 'students' | 'parents' | 'guests'>('all_public');
   const [importedAccounts, setImportedAccounts] = useState<any[]>([]);
+  const [importedStudents, setImportedStudents] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const studentFileInputRef = useRef<HTMLInputElement>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const saveHomeworkStateForUndo = () => {
@@ -317,6 +320,152 @@ export default function AdminSections({
       }
     };
 
+    const handleImportStudentFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const binaryStr = evt.target?.result;
+          const workbook = XLSX.read(binaryStr, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const rawRows: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+          
+          if (!rawRows || rawRows.length === 0) {
+            showToast("Tệp tin trống hoặc không có thông tin hợp lệ!", "info");
+            return;
+          }
+
+          const parsedList: any[] = [];
+          
+          rawRows.forEach((row: any) => {
+            const name = (row["Họ tên"] || row["Họ tên học sinh"] || row["Họ và tên"] || "").toString().trim();
+            const studentId = (row["Mã định danh"] || "").toString().trim();
+            const cccd = (row["CCCD"] || "").toString().trim();
+            const dob = (row["Năm sinh"] || "").toString().trim();
+            const classVal = (row["Lớp"] || "").toString().trim();
+            const address = (row["Nơi ở"] || "").toString().trim();
+            const parents = (row["Cha mẹ"] || "").toString().trim();
+            const phone = (row["Số điện thoại"] || row["SĐT"] || "").toString().trim();
+            
+            if (!name) return;
+
+            let username = "";
+            if (studentId) {
+              username = studentId.toLowerCase().replace(/[^a-z0-9]/g, '');
+            } else {
+              const cleanName = name
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/đ/g, "d")
+                .replace(/[^a-z0-9 ]/g, "")
+                .trim()
+                .split(/\s+/)
+                .map((word, i, arr) => (i === arr.length - 1 ? word : word[0]))
+                .join("");
+              username = cleanName + "_" + Math.floor(100 + Math.random() * 900);
+            }
+
+            const password = (row["Mật khẩu (Tùy chọn)"] || row["Mật khẩu"] || "123").toString().trim();
+
+            parsedList.push({
+              name,
+              username,
+              password,
+              role: "Học sinh",
+              extra: `Lớp: ${classVal} | PH: ${parents}`,
+              studentId,
+              cccd,
+              dob,
+              class: classVal,
+              address,
+              parents,
+              phone,
+              isFirstLogin: false,
+              canPostNews: false
+            });
+          });
+
+          if (parsedList.length === 0) {
+            showToast("Không tìm thấy hàng tài khoản học sinh hợp lệ nào trong tệp tin!", "error");
+          } else {
+            setImportedStudents(parsedList);
+            showToast(`Đã đọc sơ bộ dữ liệu học sinh thành công: ${parsedList.length} tài khoản!`, "success");
+          }
+        } catch (error: any) {
+          showToast(`Lỗi giải mã file biểu mẫu: ${error.message || 'Sai định dạng'}`, "error");
+        }
+      };
+      reader.readAsBinaryString(file);
+    };
+
+    const handleSaveImportedStudents = async () => {
+      if (isReadOnly) {
+        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+        return;
+      }
+      if (importedStudents.length === 0) {
+        showToast("Vui lòng tải tệp biểu mẫu học sinh lên trước khi lưu!", "info");
+        return;
+      }
+
+      const existingUsernames = new Set(accounts.map(a => a.username.toLowerCase()));
+      const finalToImport: Account[] = [];
+      let duplicateCount = 0;
+
+      importedStudents.forEach((imp, index) => {
+        let uniqueUsername = imp.username;
+        if (existingUsernames.has(uniqueUsername)) {
+          duplicateCount++;
+          uniqueUsername = `${uniqueUsername}_${Math.floor(100 + Math.random() * 900)}`;
+        }
+        
+        finalToImport.push({
+          id: Date.now() + index,
+          name: imp.name,
+          username: uniqueUsername,
+          password: imp.password,
+          role: imp.role,
+          extra: imp.extra,
+          isFirstLogin: false,
+          canPostNews: imp.canPostNews,
+          studentId: imp.studentId,
+          cccd: imp.cccd,
+          dob: imp.dob,
+          class: imp.class,
+          address: imp.address,
+          parents: imp.parents,
+          phone: imp.phone
+        });
+        existingUsernames.add(uniqueUsername);
+      });
+
+      const updatedAccounts = [...finalToImport, ...accounts];
+      setAccounts(updatedAccounts);
+      localStorage.setItem('thcs_accounts', JSON.stringify(updatedAccounts));
+      
+      let warnMsg = duplicateCount > 0 
+        ? ` (Đã bổ sung mã số để tránh trùng lặp cho ${duplicateCount} tài khoản)`
+        : "";
+      
+      try {
+        const syncSuccess = await syncTableToSupabase('thcs_accounts', updatedAccounts, accounts);
+        if (syncSuccess) {
+          showToast(`Chúc mừng! Cấp mới đồng loạt thành công ${finalToImport.length} tài khoản Học sinh và đã đồng bộ lên Cloud!${warnMsg}`, "success");
+        } else {
+          showToast(`Chúc mừng! Cấp mới đồng loạt thành công ${finalToImport.length} tài khoản Học sinh (Lưu ngoại tuyến, đồng bộ lên đám mây thất bại)!${warnMsg}`, "info");
+        }
+      } catch (err) {
+        showToast(`Cấp thành công ngoại tuyến. Lỗi đồng bộ đám mây!`, "info");
+      }
+
+      setImportedStudents([]);
+      setShowStudentBulk(false);
+    };
+
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -529,10 +678,26 @@ export default function AdminSections({
                   return;
                 }
                 setShowBulk(prev => !prev);
+                setShowStudentBulk(false);
               }}
               className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <FileSpreadsheet className="w-4 h-4" /> Cấp Đồng Loạt (Excel/CSV)
+            </button>
+            <button
+              id="btn-student-bulk-import"
+              onClick={() => {
+                if (isReadOnly) {
+                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  return;
+                }
+                setShowStudentBulk(prev => !prev);
+                setShowBulk(false);
+              }}
+              className="bg-rose-600 hover:bg-rose-700 text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Cấp tài khoản học sinh đồng loạt và xuất biểu mẫu thông tin chi tiết học sinh"
+            >
+              <FileSpreadsheet className="w-4 h-4" /> Cấp Học Sinh Đồng Loạt (Excel)
             </button>
             <button
               onClick={handleExportAccounts}
@@ -704,6 +869,133 @@ export default function AdminSections({
                 {importedAccounts.length > 0 && (
                   <button
                     onClick={() => setImportedAccounts([])}
+                    className="text-rose-500 hover:text-rose-700 font-bold text-[10px] mt-2 self-start ml-auto text-right hover:underline"
+                  >
+                    Hủy bỏ danh sách xem trước
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Collapsible Student Bulk Import Zone */}
+        {showStudentBulk && (
+          <div id="student-bulk-import-zone" className="bg-gradient-to-br from-rose-50/50 to-orange-50/40 p-5 rounded-2xl border border-rose-100 shadow-inner space-y-4 animate-fade-in text-slate-700">
+            <div className="flex justify-between items-start">
+              <div>
+                <b className="text-xs md:text-sm text-rose-950 block font-extrabold">Cấp Tài Khoản Học Sinh Đồng Loạt & Xuất Biểu Mẫu</b>
+                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                  Tải biểu mẫu Excel mẫu học sinh theo đầy đủ các trường thông tin chuẩn (STT, Mã định danh, CCCD, Họ tên, Năm sinh, Lớp, Nơi ở, Cha mẹ, Số điện thoại) để tự động hóa cấp hàng loạt.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowStudentBulk(false);
+                  setImportedStudents([]);
+                }}
+                className="text-slate-400 hover:text-slate-600 hover:bg-white p-1 rounded-full transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left action panel */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200/80 space-y-3 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <span className="text-[10.5px] font-extrabold text-rose-900 block uppercase tracking-wider">CÁC BƯỚC THỰC HIỆN</span>
+                  
+                  <div className="flex items-start gap-2.5 text-[11px]">
+                    <div className="bg-rose-100 text-rose-850 text-[10px] font-black h-5 w-5 rounded-full flex items-center justify-center shrink-0">1</div>
+                    <div>
+                      <p className="font-bold text-slate-800">Tải xuống tệp mẫu thông tin học sinh</p>
+                      <button
+                        onClick={handleDownloadStudentTemplate}
+                        className="text-[10.5px] text-brand-blue hover:underline font-black mt-1.5 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5 animate-bounce" /> Click để tải biểu mẫu học sinh (.xlsx)
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2.5 text-[11px]">
+                    <div className="bg-rose-100 text-rose-850 text-[10px] font-black h-5 w-5 rounded-full flex items-center justify-center shrink-0">2</div>
+                    <div className="flex-1 space-y-2">
+                      <p className="font-bold text-slate-800">Điền đầy đủ thông tin học sinh, sau đó tải lên</p>
+                      <label className="border-2 border-dashed border-rose-200 hover:border-rose-400 bg-rose-50/20 hover:bg-rose-50/30 cursor-pointer rounded-xl p-3 flex flex-col items-center justify-center gap-1.5 transition">
+                        <Upload className="w-6 h-6 text-rose-600" />
+                        <span className="font-bold text-[10px] text-slate-600 text-center">Nhấn để Browse hoặc kéo thả file Excel học sinh vào đây</span>
+                        <input
+                          type="file"
+                          accept=".xlsx, .xls, .csv"
+                          onChange={handleImportStudentFile}
+                          className="hidden"
+                          ref={studentFileInputRef}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {importedStudents.length > 0 && (
+                  <div className="pt-2 border-t flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-emerald-700">
+                      Đã đọc thành công <b>{importedStudents.length}</b> dòng học sinh
+                    </span>
+                    <button
+                      onClick={handleSaveImportedStudents}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-extrabold px-3.5 py-2 rounded-xl shadow transition"
+                    >
+                      Xác nhận cấp đồng loạt
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Right preview panel */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200/80 flex flex-col justify-between min-h-[180px]">
+                <div>
+                  <span className="text-[10.5px] font-extrabold text-rose-900 block uppercase tracking-wider mb-2">Bản Xem Trước Dữ Liệu Học Sinh</span>
+                  {importedStudents.length === 0 ? (
+                    <div className="h-28 border border-dashed rounded-lg bg-slate-50 flex flex-col items-center justify-center text-slate-400 italic text-[10.5px] font-bold">
+                      <AlertCircle className="w-5 h-5 text-rose-400 mb-1" />
+                      Yêu cầu: chưa có tệp tin biểu mẫu nào được nạp lên
+                    </div>
+                  ) : (
+                    <div className="max-h-40 overflow-y-auto border border-slate-150 rounded-lg text-[10.5px]">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b font-extrabold text-slate-600 select-none">
+                            <th className="p-1.5">Họ tên học sinh</th>
+                            <th className="p-1.5">Mã ĐD</th>
+                            <th className="p-1.5">Lớp</th>
+                            <th className="p-1.5">Số điện thoại</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold font-sans">
+                          {importedStudents.slice(0, 10).map((imp, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50">
+                              <td className="p-1.5 font-bold text-slate-800 truncate max-w-[100px]">{imp.name}</td>
+                              <td className="p-1.5 font-mono text-indigo-705 truncate max-w-[80px]">{imp.studentId || '-'}</td>
+                              <td className="p-1.5 font-bold">{imp.class || '-'}</td>
+                              <td className="p-1.5 font-mono text-slate-500 truncate max-w-[85px]">{imp.phone || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {importedStudents.length > 10 && (
+                        <div className="p-1 bg-slate-50 border-t text-center text-slate-400 text-[9px] font-bold font-mono">
+                          ...và {importedStudents.length - 10} học sinh bổ sung khác
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {importedStudents.length > 0 && (
+                  <button
+                    onClick={() => setImportedStudents([])}
                     className="text-rose-500 hover:text-rose-700 font-bold text-[10px] mt-2 self-start ml-auto text-right hover:underline"
                   >
                     Hủy bỏ danh sách xem trước
