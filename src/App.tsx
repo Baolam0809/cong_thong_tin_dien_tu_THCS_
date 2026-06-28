@@ -28,7 +28,8 @@ import {
   CreateExamModal,
   CreateHomeworkModal,
   GradingModal,
-  ActivityDetailModal
+  ActivityDetailModal,
+  TeacherSyncModal
 } from './components/Modals';
 
 import {
@@ -327,6 +328,7 @@ export default function App() {
   const [classHistory, setClassHistory] = useState<Class[][]>([]);
   
   const [isAddAssignmentOpen, setIsAddAssignmentOpen] = useState(false);
+  const [isSyncPreviewOpen, setIsSyncPreviewOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
 
   const [isAddExamOpen, setIsAddExamOpen] = useState(false);
@@ -1226,6 +1228,10 @@ export default function App() {
   };
 
   const handleSyncAccountsWithAssignments = () => {
+    setIsSyncPreviewOpen(true);
+  };
+
+  const executeSyncAccountsWithAssignments = () => {
     let count = 0;
     setAccounts(prevAccounts => {
       const updatedAccounts = prevAccounts.map(acc => {
@@ -1286,6 +1292,7 @@ export default function App() {
         return prevAccounts;
       }
     });
+    setIsSyncPreviewOpen(false);
   };
 
   useEffect(() => {
@@ -2406,6 +2413,14 @@ export default function App() {
         editingAssignment={editingAssignment}
         onClose={() => setIsAddAssignmentOpen(false)}
         onSave={handleSaveAssignment}
+      />
+
+      <TeacherSyncModal
+        isOpen={isSyncPreviewOpen}
+        accounts={accounts}
+        assignments={assignments}
+        onClose={() => setIsSyncPreviewOpen(false)}
+        onConfirm={executeSyncAccountsWithAssignments}
       />
 
       <CreateExamModal

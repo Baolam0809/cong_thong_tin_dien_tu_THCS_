@@ -87,6 +87,7 @@ export default function AdminSections({
 
   // Bulk import accounts
   const [showBulk, setShowBulk] = useState(false);
+  const [accountsTabFilter, setAccountsTabFilter] = useState<'all' | 'teachers' | 'staff' | 'others'>('all');
   const [importedAccounts, setImportedAccounts] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -544,19 +545,69 @@ export default function AdminSections({
           </div>
         )}
 
+        {/* Bộ lọc vai trò tài khoản theo phân loại Giáo viên / Nhân viên */}
+        <div className="flex flex-wrap border-b border-slate-200 gap-1.5 p-1 bg-slate-50 rounded-xl max-w-fit">
+          <button
+            onClick={() => setAccountsTabFilter('all')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              accountsTabFilter === 'all'
+                ? 'bg-white text-slate-800 shadow-sm border border-slate-200'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+            }`}
+          >
+            Tất cả ({accounts.length})
+          </button>
+          <button
+            onClick={() => setAccountsTabFilter('teachers')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              accountsTabFilter === 'teachers'
+                ? 'bg-white text-teal-700 shadow-sm border border-teal-200 font-extrabold'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+            }`}
+          >
+            Danh sách Giáo viên ({accounts.filter(a => a.role === 'Giáo viên').length})
+          </button>
+          <button
+            onClick={() => setAccountsTabFilter('staff')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              accountsTabFilter === 'staff'
+                ? 'bg-white text-rose-700 shadow-sm border border-rose-200'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+            }`}
+            title="Tài khoản của Cán bộ / Nhân viên / Quản trị viên"
+          >
+            Cán bộ & Nhân viên ({accounts.filter(a => a.role === 'Admin').length})
+          </button>
+          <button
+            onClick={() => setAccountsTabFilter('others')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              accountsTabFilter === 'others'
+                ? 'bg-white text-indigo-700 shadow-sm border border-indigo-200'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+            }`}
+          >
+            Học sinh & Phụ huynh ({accounts.filter(a => a.role === 'Học sinh' || a.role === 'Phụ huynh').length})
+          </button>
+        </div>
+
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-500 font-extrabold uppercase border-b border-slate-200">
-                <th className="p-3">Họ và Tên Nhân Sự</th>
+                <th className="p-3">{accountsTabFilter === 'teachers' ? 'Họ và Tên Giáo Viên' : 'Họ và Tên Nhân Sự / Vai Trò'}</th>
                 <th className="p-3">Tên đăng nhập (Username)</th>
                 <th className="p-3">Vai trò chức vụ</th>
-                <th className="p-3">Thông tin đính danh</th>
+                <th className="p-3">Thông tin đính danh (Phân Công Giảng Dạy)</th>
                 <th className="p-3 text-right">Lựa chọn</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {accounts.map(acc => (
+              {accounts.filter(acc => {
+                if (accountsTabFilter === 'teachers') return acc.role === 'Giáo viên';
+                if (accountsTabFilter === 'staff') return acc.role === 'Admin';
+                if (accountsTabFilter === 'others') return acc.role === 'Học sinh' || acc.role === 'Phụ huynh';
+                return true;
+              }).map(acc => (
                 <tr key={acc.id} className="border-b hover:bg-slate-50 transition duration-155">
                   <td className="p-3">
                     <b className="text-slate-800 block text-xs">{acc.name}</b>
@@ -570,7 +621,7 @@ export default function AdminSections({
                   <td className="p-3">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                       acc.role === 'Admin' ? 'bg-rose-50 text-rose-800 border-rose-200' :
-                      acc.role === 'Giáo viên' ? 'bg-blue-50 text-brand-blue border-blue-200' :
+                      acc.role === 'Giáo viên' ? 'bg-teal-50 text-teal-800 border-teal-200' :
                       acc.role === 'Phụ huynh' ? 'bg-orange-50 text-brand-orange border-orange-200' :
                       'bg-emerald-50 text-emerald-800 border-emerald-200'
                     }`}>

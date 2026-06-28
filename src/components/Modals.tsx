@@ -1605,3 +1605,156 @@ export function ActivityDetailModal({ isOpen, activityId, activities, currentUse
     </div>
   );
 }
+
+interface TeacherSyncModalProps {
+  isOpen: boolean;
+  accounts: Account[];
+  assignments: Assignment[];
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+export function TeacherSyncModal({ isOpen, accounts, assignments, onClose, onConfirm }: TeacherSyncModalProps) {
+  if (!isOpen) return null;
+
+  const teachersSyncList = useMemo(() => {
+    return accounts
+      .filter(acc => acc.role === 'Giáo viên')
+      .map(acc => {
+        const asg = assignments.find(
+          a => a.teacherId === acc.id || a.teacherName.toLowerCase() === acc.name.toLowerCase()
+        );
+        let newExtra = 'Chưa phân công bộ môn';
+        if (asg) {
+          if (asg.subjectClassPairs && asg.subjectClassPairs.length > 0) {
+            const groups: { [subject: string]: string[] } = {};
+            asg.subjectClassPairs.forEach(pair => {
+              const lastSpaceIdx = pair.lastIndexOf(' ');
+              if (lastSpaceIdx !== -1) {
+                const sub = pair.substring(0, lastSpaceIdx).trim();
+                const cls = pair.substring(lastSpaceIdx + 1).trim();
+                if (!groups[sub]) groups[sub] = [];
+                if (!groups[sub].includes(cls)) groups[sub].push(cls);
+              } else {
+                if (!groups[pair]) groups[pair] = [];
+              }
+            });
+            const formattedList = Object.entries(groups).map(([sub, classesList]) => {
+              if (classesList.length > 0) {
+                classesList.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+                return `${sub} (${classesList.join(', ')})`;
+              }
+              return sub;
+            });
+            newExtra = `Dạy: ${formattedList.join('; ')}`;
+          } else if (asg.subjects && asg.subjects.length > 0 && asg.classes && asg.classes.length > 0) {
+            const sortedClasses = [...asg.classes].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+            newExtra = `Dạy: ${asg.subjects.join(', ')} (${sortedClasses.join(', ')})`;
+          } else if (asg.subjects && asg.subjects.length > 0) {
+            newExtra = `Dạy: ${asg.subjects.join(', ')}`;
+          }
+        }
+        return {
+          id: acc.id,
+          name: acc.name,
+          username: acc.username,
+          currentExtra: acc.extra || 'Chưa thiết lập',
+          newExtra,
+          hasChanged: (acc.extra || '') !== newExtra
+        };
+      });
+  }, [accounts, assignments]);
+
+  const changedCount = useMemo(() => {
+    return teachersSyncList.filter(t => t.hasChanged).length;
+  }, [teachersSyncList]);
+
+  return (
+    <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-[100] p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[85vh]">
+        <div className="flex justify-between border-b pb-3 mb-4">
+          <h4 className="font-extrabold text-sm text-brand-blue flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-teal-605" /> Đồng bộ Tài Khoản Giáo Viên với Phân Công
+          </h4>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-655 cursor-pointer">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <p className="text-[11px] text-slate-500 mb-4 font-semibold leading-relaxed">
+          * Hệ thống sẽ cập nhật thông tin bộ môn và các lớp phụ trách từ phân công giảng dạy vào thông tin đính danh của tài khoản giáo viên. <br />
+          <span className="text-teal-600 font-bold">
+            (Danh sách chỉ hiển thị tài khoản Giáo viên giảng dạy. Tài khoản của cán bộ, nhân viên văn phòng, admin hay học sinh, phụ huynh sẽ được tự động lọc bỏ và bảo toàn nguyên vẹn)
+          </span>
+        </p>
+
+        <div className="overflow-y-auto flex-1 custom-scrollbar border rounded-2xl mb-4">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b text-slate-500 font-extrabold uppercase text-[10px]">
+                <th className="p-3">Giáo viên</th>
+                <th className="p-3">Thông tin hiện tại</th>
+                <th className="p-3">Thông tin đồng bộ mới</th>
+                <th className="p-3 text-center">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium">
+              {teachersSyncList.length > 0 ? (
+                teachersSyncList.map(t => (
+                  <tr key={t.id} className={`hover:bg-slate-50 transition duration-150 ${t.hasChanged ? 'bg-amber-50/20' : ''}`}>
+                    <td className="p-3">
+                      <b className="text-slate-800 block text-[11px]">{t.name}</b>
+                      <span className="text-[9px] text-slate-400 font-mono font-bold">{t.username}</span>
+                    </td>
+                    <td className="p-3 text-[10.5px] text-slate-500">{t.currentExtra}</td>
+                    <td className="p-3 text-[10.5px] text-teal-700 font-semibold">{t.newExtra}</td>
+                    <td className="p-3 text-center">
+                      {t.hasChanged ? (
+                        <span className="bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full text-[9px] font-bold">
+                          Cần cập nhật
+                        </span>
+                      ) : (
+                        <span className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded-full text-[9px] font-bold">
+                          Đã khớp
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-slate-400 italic text-[11px]">
+                    Không tìm thấy tài khoản giáo viên nào để đồng bộ!
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex justify-between items-center border-t pt-4">
+          <div className="text-[11.5px] text-slate-500 font-bold">
+            {changedCount > 0 ? (
+              <span>Có <b className="text-amber-600 font-black">{changedCount}</b> tài khoản giáo viên cần được cập nhật.</span>
+            ) : (
+              <span className="text-emerald-600 font-black">Tất cả tài khoản giáo viên đã hoàn toàn đồng bộ với phân công!</span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer">
+              Đóng lại
+            </button>
+            {changedCount > 0 && (
+              <button
+                onClick={onConfirm}
+                className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded-xl text-xs font-black shadow-md transition flex items-center gap-1 cursor-pointer"
+              >
+                Xác nhận Đồng bộ
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
