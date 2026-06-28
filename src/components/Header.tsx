@@ -340,37 +340,39 @@ export default function Header({
             })}
           </div>
           
-          {/* SEMESTER / ACADEMIC YEAR SELECTOR (RED BOX IN SCREENSHOT) */}
-          <div className="flex items-center gap-1.5 md:gap-2 bg-gradient-to-r from-orange-50 to-blue-50 border border-slate-250 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs shadow-sm shrink-0" id="semester-academic-year-widget">
-            <span className="flex items-center gap-1 md:gap-1.5 font-black text-[9px] md:text-[11px] text-brand-blue uppercase select-none shrink-0">
-              <GraduationCap className="w-3.5 h-3.5 text-brand-orange animate-bounce" />
-              <span className="hidden sm:inline">Học Vụ:</span>
-            </span>
-            
-            {/* Semester Select */}
-            <select
-              value={currentSemester}
-              onChange={(e) => onUpdateSemester?.(e.target.value)}
-              className="bg-white border border-slate-250 text-slate-800 font-extrabold px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-[10px] md:text-xs focus:outline-none focus:ring-1 focus:ring-brand-blue cursor-pointer shadow-sm hover:border-slate-350 transition-colors"
-              title="Chọn Học kỳ"
-            >
-              <option value="Học kỳ I">Học kỳ I</option>
-              <option value="Học kỳ II">Học kỳ II</option>
-              <option value="Học kỳ Phụ">Học kỳ Phụ</option>
-            </select>
+          {/* SEMESTER / ACADEMIC YEAR SELECTOR (RED BOX IN SCREENSHOT) - Restricted to Admin role & styled with warm apricot yellow */}
+          {currentUser?.role === 'Admin' && (
+            <div className="flex items-center gap-1.5 md:gap-2 bg-amber-50 border border-amber-250 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs shadow-sm shrink-0 animate-fade-in" id="semester-academic-year-widget">
+              <span className="flex items-center gap-1 md:gap-1.5 font-black text-[9px] md:text-[11px] text-amber-800 uppercase select-none shrink-0">
+                <GraduationCap className="w-3.5 h-3.5 text-brand-orange animate-bounce" />
+                <span className="hidden sm:inline">Học Vụ:</span>
+              </span>
+              
+              {/* Semester Select */}
+              <select
+                value={currentSemester}
+                onChange={(e) => onUpdateSemester?.(e.target.value)}
+                className="bg-white border border-amber-200 text-amber-900 font-extrabold px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-[10px] md:text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer shadow-sm hover:border-amber-350 transition-colors"
+                title="Chọn Học kỳ"
+              >
+                <option value="Học kỳ I">Học kỳ I</option>
+                <option value="Học kỳ II">Học kỳ II</option>
+                <option value="Học kỳ Phụ">Học kỳ Phụ</option>
+              </select>
 
-            {/* Year Select */}
-            <select
-              value={academicYear}
-              onChange={(e) => onUpdateAcademicYear?.(e.target.value)}
-              className="bg-white border border-slate-250 text-slate-800 font-extrabold px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-[10px] md:text-xs focus:outline-none focus:ring-1 focus:ring-brand-blue cursor-pointer shadow-sm hover:border-slate-350 transition-colors"
-              title="Chọn Năm học"
-            >
-              <option value="2024 - 2025">Năm học 2024 - 2025</option>
-              <option value="2025 - 2026">Năm học 2025 - 2026</option>
-              <option value="2026 - 2027">Năm học 2026 - 2027</option>
-            </select>
-          </div>
+              {/* Year Select */}
+              <select
+                value={academicYear}
+                onChange={(e) => onUpdateAcademicYear?.(e.target.value)}
+                className="bg-white border border-amber-200 text-amber-900 font-extrabold px-1.5 md:px-2 py-0.5 md:py-1 rounded-md text-[10px] md:text-xs focus:outline-none focus:ring-1 focus:ring-brand-orange cursor-pointer shadow-sm hover:border-amber-350 transition-colors"
+                title="Chọn Năm học"
+              >
+                <option value="2024 - 2025">Năm học 2024 - 2025</option>
+                <option value="2025 - 2026">Năm học 2025 - 2026</option>
+                <option value="2026 - 2027">Năm học 2026 - 2027</option>
+              </select>
+            </div>
+          )}
 
           <div className="py-2.5 flex flex-wrap items-center gap-2 text-xs" id="auth-panel">
             {currentUser ? (
