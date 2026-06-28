@@ -1614,6 +1614,7 @@ export default function App() {
           {/* 4. ADMIN CONSOLES */}
           {(['accounts', 'classes', 'subjects', 'exams', 'homework'] as const).includes(currentSection as any) && (
             <AdminSections
+              currentUser={currentUser}
               currentSection={currentSection as any}
               accounts={accounts}
               setAccounts={setAccounts}
@@ -1676,6 +1677,7 @@ export default function App() {
           {/* 6. GRADING SHEET */}
           {currentSection === 'grading' && (
             <GradingSection
+              currentUser={currentUser}
               submissions={submissions}
               setSubmissions={setSubmissions}
               onOpenGradingModal={(id) => setGradingSubmissionId(id)}

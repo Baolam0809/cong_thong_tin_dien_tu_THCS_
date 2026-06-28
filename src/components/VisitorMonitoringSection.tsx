@@ -210,6 +210,19 @@ export default function VisitorMonitoringSection({
         </div>
       </div>
 
+      {(currentUser?.role === 'Học sinh' || currentUser?.role === 'Phụ huynh' || currentUser?.role === 'Khách') && (
+        <div className="mx-5 md:mx-6 mt-4 bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm text-left">
+          <ShieldAlert className="w-5 h-5 shrink-0 text-amber-600 mt-0.5 animate-bounce" />
+          <div className="text-xs space-y-1">
+            <p className="font-extrabold text-[13px]">Giao Diện Nhật Ký Giới Hạn Cá Nhân (Chỉ Đọc - Read-only)</p>
+            <p className="font-medium text-slate-600 leading-relaxed">
+              Bạn đang xem nhật ký giám sát với tư cách là <strong className="text-amber-750">{currentUser?.role}</strong>. 
+              Theo chính sách bảo mật của THCS Hòa Phú, bạn <strong>chỉ có thể theo dõi và lọc lịch sử sự kiện của riêng tài khoản cá nhân</strong>. Bạn không có quyền truy xuất cơ sở dữ liệu gốc, cấu hình camera tập trung hoặc xóa nhật ký hệ thống.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Grid: Cam setup and instructions on left, Logs listing on right */}
       <div className="p-5 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
         

@@ -165,6 +165,10 @@ export default function Sidebar({
   const visibleItems = menuItems.filter(item => {
     if (item.roles.includes('all')) return true;
     if (!role) return false;
+    // Student, Parent, and Guest can see all menu items to view the entire website structure
+    if (role === 'Học sinh' || role === 'Phụ huynh' || role === 'Khách') {
+      return true;
+    }
     if (item.id === 'ui-news-management') {
       return role === 'Admin' || currentUser?.canPostNews === true;
     }

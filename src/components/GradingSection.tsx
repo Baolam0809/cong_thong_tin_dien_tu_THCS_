@@ -13,10 +13,11 @@ import {
   ThumbsUp,
   Trash2
 } from 'lucide-react';
-import { Submission } from '../types';
+import { Submission, Account } from '../types';
 import { showToast } from './Toast';
 
 interface GradingSectionProps {
+  currentUser: Account | null;
   submissions: Submission[];
   setSubmissions: React.Dispatch<React.SetStateAction<Submission[]>>;
   onOpenGradingModal: (id: number) => void;
@@ -62,11 +63,13 @@ const mockSubjects = [
 ];
 
 export default function GradingSection({
+  currentUser,
   submissions,
   setSubmissions,
   onOpenGradingModal,
   onDeleteSubmission,
 }: GradingSectionProps) {
+  const isReadOnly = currentUser && (currentUser.role === 'Học sinh' || currentUser.role === 'Phụ huynh' || currentUser.role === 'Khách');
   const [activeTab, setActiveTab] = useState<'pending' | 'graded'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -83,6 +86,10 @@ export default function GradingSection({
   );
 
   const handleCreateMockSubmission = () => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     // Select random elements
     const student = mockStudents[Math.floor(Math.random() * mockStudents.length)];
     const subjectData = mockSubjects[Math.floor(Math.random() * mockSubjects.length)];
@@ -116,6 +123,10 @@ export default function GradingSection({
   };
 
   const handleClearGradedSubmissions = () => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     if (confirm("Bạn có chắc chắn muốn xóa lịch sử bài luận đã chấm điểm? (Bài chờ chấm vẫn được giữ nguyên)")) {
       setSubmissions(prev => prev.filter(s => s.grade === null));
       showToast("Đã dọn dẹp sạch danh sách bài thi đã hoàn tất chấm điểm!", "info");
@@ -123,7 +134,19 @@ export default function GradingSection({
   };
 
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in space-y-5">
+    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in space-y-5 text-left">
+      {isReadOnly && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-805 flex items-start gap-3 shadow-sm animate-fade-in">
+          <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
+            <p className="font-medium text-slate-600 leading-relaxed">
+              Bạn đang truy cập trang Chấm thi với vai trò <strong className="text-amber-700">{currentUser?.role}</strong>. 
+              Bạn có thể tự do xem toàn bộ kết quả thi và các bài nộp của học sinh tại đây, nhưng <strong>không có quyền thực hiện các thao tác chấm điểm, chỉnh sửa hoặc xóa dữ liệu</strong>.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
         <div>
           <h3 className="font-extrabold text-sm md:text-base text-slate-800 flex items-center gap-2">

@@ -30,6 +30,7 @@ import { fullSubjects } from '../data';
 import { fetchTableData, syncTableToSupabase } from '../lib/supabase';
 
 interface AdminSectionsProps {
+  currentUser: Account | null;
   currentSection: 'accounts' | 'classes' | 'subjects' | 'exams' | 'homework';
   accounts: Account[];
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
@@ -56,6 +57,7 @@ interface AdminSectionsProps {
 }
 
 export default function AdminSections({
+  currentUser,
   currentSection,
   accounts,
   setAccounts,
@@ -79,6 +81,8 @@ export default function AdminSections({
   onSyncAccountsWithAssignments,
 }: AdminSectionsProps) {
   
+  const isReadOnly = currentUser && (currentUser.role === 'Học sinh' || currentUser.role === 'Phụ huynh' || currentUser.role === 'Khách');
+
   // Assignments history for undo
   const [assignmentHistory, setAssignmentHistory] = useState<Assignment[][]>([]);
 
@@ -107,6 +111,10 @@ export default function AdminSections({
   // 1. ACCOUNTS VIEW
   const renderAccounts = () => {
     const handleDeleteAcc = (id: number, role: string, username: string) => {
+      if (isReadOnly) {
+        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+        return;
+      }
       if (role === 'Admin' && username === 'admin') {
         showToast("Không thể xóa tài quản trị mặc định hệ thống!", "info");
         return;
@@ -151,6 +159,10 @@ export default function AdminSections({
 
     const handleSyncAccounts = async () => {
       if (isSyncing) return;
+      if (isReadOnly) {
+        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+        return;
+      }
       setIsSyncing(true);
       try {
         showToast("Đang kết nối Cloud để đồng bộ hóa tài khoản...", "info");
@@ -318,6 +330,10 @@ export default function AdminSections({
     };
 
     const handleSaveImportedAccounts = () => {
+      if (isReadOnly) {
+        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+        return;
+      }
       if (importedAccounts.length === 0) {
         showToast("Vui lòng tải tệp biểu mẫu lên trước khi lưu!", "info");
         return;
@@ -359,7 +375,19 @@ export default function AdminSections({
     };
 
     return (
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in space-y-4">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in space-y-4 text-left">
+        {isReadOnly && (
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
+              <p className="font-medium text-slate-600 leading-relaxed">
+                Bạn đang xem mục quản trị tài khoản với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
+                Bạn có quyền quan sát và tải báo cáo tài khoản về máy, nhưng <strong>không thể thêm, xóa hoặc đồng bộ tài khoản lên Cloud</strong>.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="flex justify-between items-center border-b pb-3 flex-wrap gap-2">
           <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
             <Users2 className="w-5 h-5 text-brand-blue" />
@@ -367,13 +395,25 @@ export default function AdminSections({
           </h3>
           <div className="flex gap-2 flex-wrap">
             <button
-              onClick={onOpenPermissionModal}
+              onClick={() => {
+                if (isReadOnly) {
+                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  return;
+                }
+                onOpenPermissionModal();
+              }}
               className="bg-amber-500 hover:bg-amber-600 text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <ShieldAlert className="w-4 h-4" /> Bản tin & Phân quyền Đăng bài
             </button>
             <button
-              onClick={() => setShowBulk(prev => !prev)}
+              onClick={() => {
+                if (isReadOnly) {
+                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  return;
+                }
+                setShowBulk(prev => !prev);
+              }}
               className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <FileSpreadsheet className="w-4 h-4" /> Cấp Đồng Loạt (Excel/CSV)
@@ -389,20 +429,32 @@ export default function AdminSections({
               onClick={handleSyncAccounts}
               disabled={isSyncing}
               className={`${isSyncing ? 'bg-slate-400 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-700'} text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer`}
-              title="Đồng bộ 2 chiều: Kéo tài khoản mới từ Cloud và Đẩy dữ liệu đồng nhất lên Supabase"
+              title="Đò đồng bộ 2 chiều: Kéo tài khoản mới từ Cloud và Đẩy dữ liệu đồng nhất lên Supabase"
             >
               <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} /> 
               {isSyncing ? 'Đang đồng bộ...' : 'Đồng Bộ Đám Mây'}
             </button>
             <button
-              onClick={onSyncAccountsWithAssignments}
+              onClick={() => {
+                if (isReadOnly) {
+                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  return;
+                }
+                onSyncAccountsWithAssignments();
+              }}
               className="bg-teal-600 hover:bg-teal-700 text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer"
               title="Đồng bộ thông tin bộ môn giảng dạy từ phân công vào thông tin đính danh của tài khoản giáo viên"
             >
               <RefreshCw className="w-4 h-4 animate-pulse" /> Đồng bộ với Phân công
             </button>
             <button
-              onClick={() => onOpenAddAccount()}
+              onClick={() => {
+                if (isReadOnly) {
+                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  return;
+                }
+                onOpenAddAccount();
+              }}
               className="bg-brand-blue hover:bg-brand-blue-dark text-white text-[11px] px-3.5 py-2 rounded-xl font-bold shadow-sm transition-colors flex items-center gap-1 cursor-pointer"
             >
               <UserPlus className="w-4 h-4" /> Cấp Tài Khoản Mới
@@ -635,7 +687,13 @@ export default function AdminSections({
                   <td className="p-3 text-right">
                     <div className="flex gap-1 justify-end">
                       <button
-                        onClick={() => onOpenAddAccount(acc)}
+                        onClick={() => {
+                          if (isReadOnly) {
+                            showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                            return;
+                          }
+                          onOpenAddAccount(acc);
+                        }}
                         className="bg-blue-50 hover:bg-brand-blue text-brand-blue hover:text-white font-bold text-xs p-1.5 rounded-lg transition cursor-pointer"
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -660,8 +718,20 @@ export default function AdminSections({
   // 2. CLASSES STRUCTURE VIEW
   const renderClasses = () => {
     return (
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
-        <div className="flex justify-between border-b pb-3 mb-4 items-center">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left space-y-4">
+        {isReadOnly && (
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
+              <p className="font-medium text-slate-600 leading-relaxed">
+                Bạn đang xem cơ cấu lớp học với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
+                Bạn có thể tự do tham khảo phân công giáo viên chủ nhiệm và sĩ số, nhưng <strong>không thể thêm lớp, sửa thông tin lớp hoặc xóa lớp học</strong>.
+              </p>
+            </div>
+          </div>
+        )}
+        <div className="flex justify-between border-b pb-3 mb-4 items-center flex-wrap gap-2">
           <h3 className="font-extrabold text-sm text-slate-805 flex items-center gap-1.5">
             <School className="w-5 h-5 text-brand-blue" />
             Cơ cấu Khối & Danh sách các Lớp học hành chính
@@ -669,7 +739,13 @@ export default function AdminSections({
           <div className="flex gap-2 items-center">
             {classHistory.length > 0 && (
               <button
-                onClick={onUndoClass}
+                onClick={() => {
+                  if (isReadOnly) {
+                    showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                    return;
+                  }
+                  onUndoClass();
+                }}
                 className="bg-slate-100 hover:bg-slate-205 text-slate-700 text-xs px-3.5 py-1.5 rounded-xl font-extrabold flex items-center gap-1.5 transition cursor-pointer"
                 title="Hoàn tác thao tác vừa thực hiện"
               >
@@ -678,7 +754,13 @@ export default function AdminSections({
               </button>
             )}
             <button
-              onClick={() => onOpenAddClass()}
+              onClick={() => {
+                if (isReadOnly) {
+                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  return;
+                }
+                onOpenAddClass();
+              }}
               className="bg-brand-orange text-white text-xs px-3.5 py-1.5 rounded-xl font-bold hover:bg-brand-orange-dark transition cursor-pointer"
             >
               Thêm chi đội lớp học mới
@@ -713,7 +795,13 @@ export default function AdminSections({
               {/* Action buttons with elegant styles */}
               <div className="flex justify-end gap-1.5 mt-3 pt-2 border-t border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity duration-155">
                 <button
-                  onClick={() => onOpenAddClass(cls)}
+                  onClick={() => {
+                    if (isReadOnly) {
+                      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                      return;
+                    }
+                    onOpenAddClass(cls);
+                  }}
                   className="bg-blue-50 hover:bg-brand-blue text-brand-blue hover:text-white p-1.5 rounded-lg transition duration-150 cursor-pointer"
                   title={`Sửa thông tin lớp ${cls.lop}`}
                 >
@@ -721,11 +809,15 @@ export default function AdminSections({
                 </button>
                 <button
                   onClick={() => {
+                    if (isReadOnly) {
+                      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                      return;
+                    }
                     if (confirm(`Bạn có chắc chắn muốn xóa lớp ${cls.lop} khỏi hệ thống?`)) {
                       onDeleteClass(cls.id);
                     }
                   }}
-                  className="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white p-1.5 rounded-lg transition duration-150 cursor-pointer"
+                  className="bg-rose-55 hover:bg-rose-600 text-rose-600 hover:text-white p-1.5 rounded-lg transition duration-150 cursor-pointer"
                   title={`Xóa lớp ${cls.lop}`}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -741,6 +833,10 @@ export default function AdminSections({
   // 3. SUBJECTS AND ASSIGNMENTS
   const renderSubjects = () => {
     const handleUndo = () => {
+      if (isReadOnly) {
+        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+        return;
+      }
       if (assignmentHistory.length === 0) return;
       const prev = assignmentHistory[assignmentHistory.length - 1];
       setAssignments(prev);
@@ -749,6 +845,10 @@ export default function AdminSections({
     };
 
     const handleDeleteAssignment = (id: number) => {
+      if (isReadOnly) {
+        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+        return;
+      }
       // Record history
       setAssignmentHistory(prev => [...prev, [...assignments]]);
       setAssignments(prev => prev.filter(a => a.id !== id));
@@ -756,7 +856,19 @@ export default function AdminSections({
     };
 
     return (
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left space-y-4">
+        {isReadOnly && (
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
+              <p className="font-medium text-slate-600 leading-relaxed">
+                Bạn đang xem danh sách phân công môn học với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
+                Bạn có thể tham khảo bảng môn học được đảm nhiệm bởi thầy cô, nhưng <strong>không thể thêm, sửa đổi phân công hoặc xóa bỏ bản ghi phân công</strong>.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="flex justify-between border-b pb-3 mb-4 items-center flex-wrap gap-2">
           <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
             <BookMarked className="w-5 h-5 text-brand-blue" />
@@ -772,14 +884,26 @@ export default function AdminSections({
               </button>
             )}
             <button
-              onClick={onSyncAccountsWithAssignments}
+              onClick={() => {
+                if (isReadOnly) {
+                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  return;
+                }
+                onSyncAccountsWithAssignments();
+              }}
               className="bg-teal-600 hover:bg-teal-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-bold shadow cursor-pointer flex items-center gap-1"
               title="Đồng bộ thông tin bộ môn giảng dạy từ phân công vào thông tin đính danh của tài khoản giáo viên"
             >
               <RefreshCw className="w-3.5 h-3.5 animate-pulse" /> Đồng bộ Tài Khoản
             </button>
             <button
-              onClick={() => onOpenAddAssignment()}
+              onClick={() => {
+                if (isReadOnly) {
+                  showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                  return;
+                }
+                onOpenAddAssignment();
+              }}
               className="bg-brand-blue hover:bg-brand-blue-dark text-white text-xs px-3.5 py-1.5 rounded-lg font-bold shadow cursor-pointer flex items-center gap-1"
             >
               <PlusSquare className="w-4 h-4" /> Báo Phân công mới
@@ -841,7 +965,13 @@ export default function AdminSections({
                   <td className="p-3 text-right">
                     <div className="flex gap-1.5 justify-end">
                       <button
-                        onClick={() => onOpenAddAssignment(asg)}
+                        onClick={() => {
+                          if (isReadOnly) {
+                            showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                            return;
+                          }
+                          onOpenAddAssignment(asg);
+                        }}
                         className="bg-blue-50 hover:bg-blue-600 text-brand-blue hover:text-white px-2.5 py-1.5 rounded-lg font-bold text-[10px] transition cursor-pointer"
                       >
                         Sửa
@@ -866,14 +996,32 @@ export default function AdminSections({
   // 4. EXAMS BANK VIEW
   const renderExams = () => {
     return (
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
-        <div className="flex justify-between border-b pb-3 mb-4 items-center">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left space-y-4">
+        {isReadOnly && (
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
+              <p className="font-medium text-slate-600 leading-relaxed">
+                Bạn đang xem Ngân hàng đề kiểm tra với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
+                Bạn có quyền đọc đề bài và xem danh sách đề, nhưng <strong>không thể thêm hoặc xóa tệp đề kiểm tra</strong>.
+              </p>
+            </div>
+          </div>
+        )}
+        <div className="flex justify-between border-b pb-3 mb-4 items-center flex-wrap gap-2">
           <h3 className="font-extrabold text-sm text-slate-805 flex items-center gap-1.5">
             <ClipboardList className="w-5 h-5 text-brand-blue" />
             Ngân hàng Đề Kiểm Tra & Khảo Sát Đánh Giá
           </h3>
           <button
-            onClick={onOpenAddExam}
+            onClick={() => {
+              if (isReadOnly) {
+                showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                return;
+              }
+              onOpenAddExam();
+            }}
             className="bg-brand-blue text-white text-xs px-3.5 py-1.5 rounded-lg font-bold shadow-md hover:bg-brand-blue-dark transition cursor-pointer flex items-center gap-1"
           >
             <PlusSquare className="w-4 h-4" /> Đăng tệp đề bài mới
@@ -907,14 +1055,32 @@ export default function AdminSections({
   // 5. HOMEWORK MANAGER
   const renderHomework = () => {
     return (
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left">
-        <div className="flex justify-between border-b pb-3 mb-4 items-center">
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm animate-fade-in text-left space-y-4">
+        {isReadOnly && (
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-extrabold text-[13px]">Chế độ Xem Thử Giao Diện (Chỉ Đọc - Read-only)</p>
+              <p className="font-medium text-slate-600 leading-relaxed">
+                Bạn đang xem danh sách bài tập về nhà với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
+                Bạn có thể đọc đề bài tập, tải tệp tài liệu đi kèm, nhưng <strong>không thể giao bài tập mới, sửa hoặc xóa bài tập đã giao</strong>.
+              </p>
+            </div>
+          </div>
+        )}
+        <div className="flex justify-between border-b pb-3 mb-4 items-center flex-wrap gap-2">
           <h3 className="font-extrabold text-sm text-slate-805 flex items-center gap-1.5">
             <PenTool className="w-5 h-5 text-purple-650 animate-pulse" />
             Quản lý Bài Tập về nhà cho con tự rèn luyện
           </h3>
           <button
-            onClick={() => onOpenAddHomework()}
+            onClick={() => {
+              if (isReadOnly) {
+                showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                return;
+              }
+              onOpenAddHomework();
+            }}
             className="bg-brand-orange text-white text-xs px-3.5 py-1.5 rounded-lg font-bold shadow-md hover:bg-brand-orange-dark transition cursor-pointer flex items-center gap-1"
           >
             <PlusSquare className="w-4 h-4" /> Giao Đơn Bài Tập
@@ -997,6 +1163,10 @@ export default function AdminSections({
                 <div className="flex md:flex-col gap-2 items-center justify-center shrink-0 border-t md:border-t-0 md:border-l pt-3 md:pt-0 md:pl-4 border-slate-150 self-stretch">
                   <button
                     onClick={() => {
+                      if (isReadOnly) {
+                        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                        return;
+                      }
                       saveHomeworkStateForUndo();
                       onOpenAddHomework(hw);
                     }}
@@ -1007,6 +1177,10 @@ export default function AdminSections({
                   </button>
                   <button
                     onClick={() => {
+                      if (isReadOnly) {
+                        showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+                        return;
+                      }
                       saveHomeworkStateForUndo();
                       setHomework(prev => prev.filter(item => item.id !== hw.id));
                       showToast(`Đã gỡ bài tập: ${hw.title}`, "success");

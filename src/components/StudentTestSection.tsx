@@ -146,6 +146,47 @@ export default function StudentTestSection({
     return `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
   };
 
+  if (!isStudent) {
+    return (
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm animate-fade-in space-y-4 text-left">
+        <h3 className="font-extrabold text-sm text-slate-800 border-b pb-3 mb-2 flex items-center gap-2">
+          <Award className="w-5 h-5 text-brand-blue" />
+          Hệ Học Vụ Số: Phòng Thi Trực Tuyến Học Sinh
+        </h3>
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <p className="font-extrabold text-[13px]">Chế độ Xem thử phòng thi (Read-only)</p>
+            <p className="font-medium text-slate-600 leading-relaxed">
+              Bạn đang truy cập hệ thống với tư cách là <strong className="text-amber-700">{currentUser?.role || 'Khách vãng lai'}</strong>. 
+              Chức năng làm bài thi trực tuyến và nộp bài chỉ dành riêng cho tài khoản <strong>Học sinh</strong> của trường.
+            </p>
+          </div>
+        </div>
+        <div className="border border-slate-200 rounded-xl overflow-hidden">
+          <div className="bg-slate-50 px-4 py-2 text-[11px] font-extrabold uppercase text-slate-500 border-b border-slate-200">
+            Danh sách tất cả đề thi đang mở trên hệ thống (Chỉ Xem)
+          </div>
+          <div className="p-4 divide-y divide-slate-100 max-h-[300px] overflow-y-auto">
+            {exams.length > 0 ? (
+              exams.map(ex => (
+                <div key={ex.id} className="py-2.5 flex justify-between items-center text-xs">
+                  <div>
+                    <span className="font-bold text-slate-800">Môn {ex.subject} - Đề {ex.type}</span>
+                    <span className="text-[10px] text-slate-450 block">Thời gian: {ex.duration} | Người tạo: {ex.teacher}</span>
+                  </div>
+                  <span className="bg-slate-100 text-slate-500 text-[9px] font-bold px-2.5 py-1 rounded">Chỉ đọc</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-slate-450 italic py-4">Chưa có đề thi nào trong hệ thống.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white p-5 rounded-2xl border border-slate-205 shadow-sm animate-fade-in">
       <h3 className="font-extrabold text-sm text-slate-800 border-b pb-3 mb-4 flex items-center gap-2">

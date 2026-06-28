@@ -83,6 +83,7 @@ export default function UINewsSection({
 
   const isUserAdmin = currentUser?.role === 'Admin';
   const canUserPost = isUserAdmin || currentUser?.canPostNews === true;
+  const isReadOnly = currentUser?.role === 'Học sinh' || currentUser?.role === 'Phụ huynh' || currentUser?.role === 'Khách';
 
   // Outstanding Students states
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
@@ -122,6 +123,10 @@ export default function UINewsSection({
 
   const handleSaveStudent = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     if (!studName.trim() || !studClass.trim()) {
       showToast("Vui lòng điền họ tên học sinh và lớp hành chính!", "error");
       return;
@@ -174,6 +179,10 @@ export default function UINewsSection({
   };
 
   const handleDeleteStudent = (id: number) => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     setOutstandingStudents(prev => prev.filter(s => s.id !== id));
     showToast("Đã gỡ gương sáng học sinh vàng khỏi danh sách!", "success");
     if (selectedStudentId === id) {
@@ -182,6 +191,10 @@ export default function UINewsSection({
   };
 
   const handleStudentAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -199,6 +212,10 @@ export default function UINewsSection({
   };
 
   const handleSlideFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -219,6 +236,10 @@ export default function UINewsSection({
   };
 
   const handleAddNewSlide = () => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     if (!newSlideSource.trim()) {
       showToast("Vui lòng nhập nguồn liên kết hoặc chọn tải ảnh lên từ thiết bị!", "error");
       return;
@@ -243,12 +264,20 @@ export default function UINewsSection({
   };
 
   const handleDeleteSlide = (id: string) => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     setBannerSlides(prev => prev.filter(slide => slide.id !== id));
     showToast("Đã gỡ slide hoạt động khỏi danh sách trình chiếu!", "success");
   };
 
   // Handle local image file upload & convert to Base64 (Data URL)
   const handleFileChange = (useFor: 'banner' | 'logo' | 'article') => (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -280,6 +309,10 @@ export default function UINewsSection({
 
   // Reset Branding Defaults
   const handleResetBranding = () => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     setBannerUrl('');
     setLogoUrl('');
     setMarqueeText('🚀 Chào mừng quý thầy cô, các bậc phụ huynh và các em học sinh đến với Cổng thông tin điện tử Trường THCS Hòa Phú! Chuyển đổi số học vụ nâng cao hiệu suất dạy và học!');
@@ -288,6 +321,10 @@ export default function UINewsSection({
 
   // Toggle user news posting permission
   const handleTogglePostNews = (accId: number) => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     if (!isUserAdmin) {
       showToast("Chỉ Quản trị viên (Admin) mới có quyền phân bổ tác vụ này!", "error");
       return;
@@ -304,6 +341,10 @@ export default function UINewsSection({
 
   // Open Article Modal for Create or Edit
   const handleOpenArticleModal = (article: Activity | null = null) => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     if (article) {
       setEditingArticle(article);
       setArtTitle(article.title);
@@ -332,6 +373,10 @@ export default function UINewsSection({
   // Submit Article Create / Edit Form
   const handleSaveArticle = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     if (!artTitle.trim() || !artDesc.trim() || !artContent.trim()) {
       showToast("Vui lòng điền đầy đủ các thông tin bắt buộc!", "error");
       return;
@@ -376,6 +421,10 @@ export default function UINewsSection({
 
   // Delete Article
   const handleDeleteArticle = (id: number) => {
+    if (isReadOnly) {
+      showToast("Tài khoản của bạn chỉ có quyền xem, không thể thực hiện thao tác này!", "info");
+      return;
+    }
     setActivities(prev => prev.filter(item => item.id !== id));
     showToast("Đã gỡ bỏ bài viết khỏi Cổng thông tin!", "success");
   };
@@ -447,6 +496,18 @@ export default function UINewsSection({
 
       {/* CORE WRAP DETAILS */}
       <div className="p-6">
+        {isReadOnly && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-808 flex items-start gap-3 shadow-sm text-left">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600 mt-0.5 animate-bounce" />
+            <div className="text-xs space-y-1">
+              <p className="font-extrabold text-[13px]">Chế Độ Xem Giao Diện Chỉ Đọc (Read-only)</p>
+              <p className="font-medium text-slate-600 leading-relaxed">
+                Tài khoản của bạn có vai trò là <strong className="text-amber-750">{currentUser?.role}</strong>. 
+                Bạn được phép tham quan và tìm kiếm toàn bộ nội dung cổng tin tức, bài viết, và danh sách vinh danh học sinh xuất sắc. Tuy nhiên, bạn <strong>không có quyền chỉnh sửa cấu hình nhận diện thương hiệu, thay đổi ảnh trình chiếu, hoặc biên soạn bài viết</strong>.
+              </p>
+            </div>
+          </div>
+        )}
         
         {/* TAB 1: COBRADING & QUẢN LÝ ẢNH */}
         {activeTab === 'branding' && (
