@@ -52,6 +52,18 @@ const ALL_TABLE_NAMES = [
   'thcs_visitor_logs'
 ];
 
+function isTableMissingError(message: string | undefined): boolean {
+  if (!message) return false;
+  const msg = message.toLowerCase();
+  return (
+    (msg.includes('relation') && msg.includes('does not exist')) ||
+    msg.includes('could not find the table') ||
+    msg.includes('schema cache') ||
+    (msg.includes('table') && msg.includes('does not exist')) ||
+    (msg.includes('class') && msg.includes('does not exist'))
+  );
+}
+
 /**
  * Checks connection and verifies Table schemas
  */
@@ -68,7 +80,7 @@ export async function checkDatabaseStatus(): Promise<DBStatus> {
     const { error } = await supabase.from('thcs_accounts').select('id').limit(1);
     
     if (error) {
-      if (error.message.includes('relation') && error.message.includes('does not exist')) {
+      if (isTableMissingError(error.message)) {
         status.connected = true;
         status.tablesMissing = true;
         status.missingTablesList.push('thcs_accounts');
@@ -85,7 +97,7 @@ export async function checkDatabaseStatus(): Promise<DBStatus> {
       if (table === 'thcs_accounts' && !status.tablesMissing) continue;
       
       const { error: tblError } = await supabase.from(table).select('id').limit(1);
-      if (tblError && tblError.message.includes('relation') && tblError.message.includes('does not exist')) {
+      if (tblError && isTableMissingError(tblError.message)) {
         status.tablesMissing = true;
         status.missingTablesList.push(table);
       }
